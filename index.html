@@ -58,6 +58,10 @@ nav li button[aria-current="true"]::before{content:"▸ "}
 .gutter{font-family:"JetBrains Mono",monospace;font-size:15px;line-height:1.75;color:var(--cm);text-align:right;padding:20px 10px 20px 0;user-select:none;white-space:pre;border-right:1px solid var(--line);overflow:hidden}
 .code{font-family:"JetBrains Mono",monospace;font-size:16px;line-height:1.75;padding:20px 24px;margin:0;overflow:auto;white-space:pre;tab-size:4;outline:none;color:var(--ink)}
 .code:focus-visible{box-shadow:inset 3px 0 0 var(--accent)}
+.dlg h3 small{font-weight:400;color:var(--sub);font-size:15px}
+.copyrow{display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin:12px 0}
+.copymsg{color:var(--accent);font-weight:600;font-size:15px}
+nav .copymsg{display:block;margin:2px 0 6px}
 .cfbar{display:none}
 body.codefull .editorwrap{position:fixed;inset:0 0 30vh 0;z-index:100;background:var(--paper);grid-template-rows:auto 1fr auto}
 body.codefull .cfbar{display:flex;gap:28px;align-items:center;padding:12px 24px;border-bottom:1px solid var(--line)}
@@ -149,11 +153,17 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
     <nav aria-label="샘플 코드와 도움말">
       <h2>샘플 불러오기</h2>
       <ol id="samples"></ol>
+      <h2>AI에게 코드 받기</h2>
+      <ol>
+        <li><button data-copyguide>① 설명서 복사하기</button><span class="copymsg" data-copymsg role="status"></span></li>
+        <li><button data-help="prompts">② 대화 순서 보기</button></li>
+      </ol>
       <h2>도움말</h2>
       <ol>
+        <li><button data-help="start">처음이에요? 시작하기</button></li>
         <li><button data-help="cmds">명령어 한눈에 보기</button></li>
-        <li><button data-help="prompts">AI에게 물어볼 말 모음</button></li>
         <li><button data-help="connect">연결이 안 될 때</button></li>
+        <li><button data-help="words">낯선 말 풀이</button></li>
       </ol>
     </nav>
     <div class="work">
@@ -202,6 +212,38 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 <dialog id="help" aria-label="도움말">
   <div class="dlg" id="helpBody"><div class="dlgtop"><h2>도움말</h2><button class="link" data-close>닫기 ✕</button></div>
 
+<section id="help-start">
+<h3>처음이에요? 이 순서대로 해요</h3>
+<p>알티노가 없어도, 연결이 안 돼도 ①②는 할 수 있어요. 진짜 알티노는 ③부터예요.</p>
+<h3>① 가짜 알티노로 연습하기 <small>(연결 없이)</small></h3>
+<ol>
+<li>왼쪽 <b>샘플 불러오기</b>에서 <b>2. 앞으로 갔다가 멈추기</b>를 눌러요.</li>
+<li>코드 칸 아래 <b>▶ 실행</b>을 눌러요.</li>
+<li>오른쪽 아래 <b>알티노 움직임</b> 화면에서 가짜 알티노가 달리는 걸 봐요. [⤢ 크게 보기]로 크게 볼 수 있어요.</li>
+</ol>
+<h3>② AI에게 코드 받기</h3>
+<ol>
+<li>왼쪽 <b>① 설명서 복사하기</b>를 눌러요.</li>
+<li>AI 채팅창에 붙여 넣고(Ctrl+V), 하고 싶은 움직임을 말해요.</li>
+<li>받은 코드를 코드 칸에 붙여 넣고 ▶ 실행해서 가짜 알티노로 먼저 시험해요.</li>
+</ol>
+<p>자세한 대화 순서는 왼쪽 <b>② 대화 순서 보기</b>에 있어요.</p>
+<h3>③ 진짜 알티노 연결하기</h3>
+<ol>
+<li>알티노 <b>전원</b>을 켜요.</li>
+<li>컴퓨터 블루투스에서 알티노와 <b>짝짓기</b>를 해요. (처음 한 번만 하면 돼요. 안 되면 <b>연결이 안 될 때</b>를 봐요)</li>
+<li>위쪽 <b>[알티노 연결하기]</b>를 누르고, 목록에서 알티노의 <b>COM 포트</b>를 골라요.</li>
+<li>위쪽 상태가 <b>"진짜 알티노 연결됨"</b>(초록 점)으로 바뀌면 성공이에요.</li>
+</ol>
+<h3>④ 진짜로 달려 보기</h3>
+<ol>
+<li>알티노를 <b>책상 가운데 넓은 곳</b>에 놓아요. 모서리에서 멀리!</li>
+<li>처음에는 <b>느리게</b>(바퀴 값 300), <b>짧게</b>(1~2초) 해요.</li>
+<li>이상하면 바로 <b>긴급 정지</b> 버튼이나 <b>Esc</b> 키를 눌러요.</li>
+<li>한 대에는 한 사람만 연결할 수 있어요. 모둠에서 순서를 정해요.</li>
+</ol>
+</section>
+
 <section id="help-cmds">
 <h3>명령어 한눈에 보기</h3>
 <p>맨 위에는 늘 <code>from AltinoLite import *</code> 와 <code>Open('COM3')</code>, 맨 끝에는 <code>Close()</code> 를 써요. (포트 이름은 웹앱에서는 무시해요)</p>
@@ -227,42 +269,84 @@ Close()</pre>
 </section>
 
 <section id="help-prompts">
-<h3>AI에게 물어볼 말 모음</h3>
-<p>아래 글을 통째로 복사해서 AI(챗GPT, 제미나이, 클로드 등)에 붙여 넣고, 맨 끝 <b>[ ]</b> 부분만 내 생각으로 바꿔요.</p>
-<h3>① 첫 번째 질문 (꼭 붙이기)</h3>
-<pre>파이썬 초보자야. 알티노 라이트 로봇을 움직이는 코드를 만들어 줘.
-규칙:
-1. 맨 위에 from AltinoLite import * 와 Open('COM3') 를 쓰고, 맨 끝에 Close()
-2. 쓸 수 있는 명령은 Go(왼쪽,오른쪽) -1000~1000, Steering(-127~127), delay(밀리초), Sound(0~255), Light(0~255), Stop() 뿐이야
-3. 센서는 sensor.IR[1]~[6] 로 읽어
-4. 다른 라이브러리는 쓰지 마
-5. 코드에 한국어 주석을 달아 줘
-6. 끝나기 전에 Stop() 으로 멈추게 해 줘
-만들고 싶은 움직임: [예: 네모 모양으로 한 바퀴 돌기]</pre>
-<h3>② 고치고 싶을 때</h3>
-<pre>방금 코드에서 [예: 더 천천히 / 더 크게 돌게] 바꿔 줘. 바뀐 줄이 어디인지도 알려 줘.</pre>
-<h3>③ 오류가 났을 때</h3>
+<h3>AI와 대화해서 코드 받기 (4단계)</h3>
+<p>AI(챗GPT, 제미나이, 클로드 등)는 알티노 명령어를 몰라요. 그래서 <b>먼저 설명서를 주고</b>, 그다음에 하고 싶은 걸 말해요.</p>
+<div class="copyrow"><button class="run" data-copyguide>📋 AI에게 줄 설명서 복사</button><a class="link" href="AltinoLite_AI_guide.txt" download>파일로 받기</a><span class="copymsg" data-copymsg role="status"></span></div>
+<h3>① 설명서를 AI에게 붙여 넣기</h3>
+<p>위 버튼을 누르고, AI 채팅창에 <b>붙여 넣기(Ctrl+V)</b> 한 뒤 보내요. AI가 <b>"설명서를 읽었어요! 어떤 움직임을 하면 좋겠어요?"</b> 라고 하면 성공이에요.</p>
+<p>다른 대답을 하면 이렇게 말해요.</p>
+<pre>설명서를 읽고, 안내한 대로만 대답해 줘.</pre>
+<h3>② 하고 싶은 움직임 말하기</h3>
+<pre>알티노가 [예: 네모 모양으로 한 바퀴 돌고 멈추게] 해 줘. 천천히, 안전하게.</pre>
+<p>AI가 되물으면 짧게 답해요. (예: "2초 동안, 오른쪽으로 돌아요")</p>
+<h3>③ 받은 코드 실행하기</h3>
+<ol>
+<li>AI가 준 <b>코드 블록 전체</b>를 복사해요.</li>
+<li>왼쪽 <b>코드 칸</b>에 붙여 넣어요 (기존 코드는 지워도 돼요).</li>
+<li>먼저 <b>가짜 알티노</b>로 [▶ 실행]을 눌러 움직임 화면을 보고 확인해요.</li>
+<li>마음에 들면 진짜 알티노를 연결하고 다시 실행해요.</li>
+</ol>
+<p>웹앱에서는 코드 속 <code>COM4</code> 같은 포트 이름을 신경 쓰지 않아도 돼요.</p>
+<h3>④ 이상하면 AI에게 다시 말하기</h3>
+<p><b>생각과 다르게 움직일 때</b></p>
+<pre>방금 코드에서 [예: 너무 빨라 / 오른쪽 대신 왼쪽으로 돌았어]. 바꿔 줘. 바뀐 줄이 어디인지도 알려 줘.</pre>
+<p><b>빨간 오류가 났을 때</b></p>
 <pre>이 코드를 실행했더니 아래 오류가 났어. 쉬운 말로 이유를 알려 주고, 고친 코드를 줘.
 [결과 창의 빨간 글자를 복사해서 붙이기]</pre>
-<h3>④ 센서를 쓰고 싶을 때</h3>
+<p><b>센서를 쓰고 싶을 때</b></p>
 <pre>sensor.IR[2] 값이 [예: 500] 보다 커지면 멈추고 소리를 내는 코드를 만들어 줘. 소리는 마지막에 꼭 꺼 줘.</pre>
+<p>🔇 소리는 한 번 켜면 계속 울려요. AI가 준 코드에 <code>Sound(0)</code> 이 없으면 넣어 달라고 해요.</p>
 </section>
 
 <section id="help-connect">
-<h3>연결이 안 될 때</h3>
-<p>코드 연습은 연결 없이도 돼요. 화면의 가짜 알티노가 대신 움직여요. 진짜 알티노를 움직일 때만 아래를 확인해요.</p>
+<h3>연결이 안 될 때 (증상으로 찾기)</h3>
+<p>코드 연습은 연결 없이도 돼요. 가짜 알티노가 대신 움직여요. 진짜 알티노를 움직일 때만 아래를 봐요.</p>
+
+<h3>처음 한 번: 블루투스 짝짓기</h3>
 <ol>
-<li><b>브라우저</b>는 크롬(Chrome) 또는 엣지(Edge)여야 해요. 다른 브라우저는 연결 단추가 안 돼요.</li>
-<li><b>알티노 전원</b>을 켜요.</li>
-<li><b>윈도우 블루투스 설정</b>에서 알티노를 한 번 짝지어요 (비밀번호는 보통 1234 또는 0000 [확인 필요]).</li>
-<li>짝지으면 윈도우가 <b>COM 포트</b>를 만들어 줘요. 장치 관리자 → 포트(COM &amp; LPT)에서 확인해요.</li>
-<li>[알티노 연결하기]를 누르고 목록에서 알티노가 만든 COM 포트를 골라요. 포트가 둘이면 다른 쪽도 눌러 봐요.</li>
-<li>IDLE 같은 <b>다른 프로그램이 같은 포트를 쓰고 있으면</b> 열리지 않아요. 그 프로그램을 닫아요.</li>
-<li>한 대에는 한 사람만 연결해요. 3명이 동시에 연결할 수 없어요. 모둠 순서를 정해요.</li>
-<li>이상하게 움직이면 위쪽 <b>긴급 정지</b>(또는 Esc 키)를 눌러요.</li>
+<li>알티노 <b>전원</b>을 켜요.</li>
+<li>윈도우 <b>설정 → 블루투스 및 장치</b>에서 알티노를 찾아 연결해요. (비밀번호는 보통 1234 또는 0000 [확인 필요])</li>
+<li>짝짓기를 하면 윈도우가 <b>COM 포트</b>(알티노 전용 길)를 만들어 줘요. <b>장치 관리자 → 포트(COM &amp; LPT)</b>에서 볼 수 있어요.</li>
 </ol>
-<p>그래도 안 되면 [가짜 알티노로 연습]을 눌러 연결을 끊고, 알티노 전원을 껐다 켜고 다시 해 봐요.</p>
+
+<h3>① [알티노 연결하기]가 안 눌려요 / 아무 일도 없어요</h3>
+<p>브라우저가 <b>크롬(Chrome) 또는 엣지(Edge)</b>가 맞는지 봐요. 다른 브라우저(사파리, 파이어폭스)는 지원하지 않아요.</p>
+
+<h3>② 목록이 비어 있어요</h3>
+<p>알티노 전원이 켜져 있는지, 윈도우에서 짝짓기가 되어 있는지 확인해요. 짝짓기가 안 돼 있으면 COM 포트도 없어요.</p>
+
+<h3>③ 목록에 COM 포트가 여러 개예요</h3>
+<p>알티노 이름이 붙은 포트를 골라요. 포트가 둘이면 한쪽이 안 될 수 있어요. 안 되면 다른 쪽을 눌러 봐요.</p>
+
+<h3>④ "열 수 없어요"라고 나와요</h3>
+<p><b>다른 프로그램이 같은 포트를 쓰고 있어요.</b> IDLE이나 다른 탭의 이 웹앱을 닫아요. 한 대에는 한 사람(한 화면)만 연결돼요.</p>
+
+<h3>⑤ 연결은 됐는데 알티노가 안 움직여요</h3>
+<ol>
+<li>코드에 <code>Open(...)</code>이 있는지, <code>Go(300, 300)</code> 다음에 <code>delay(1500)</code>가 있는지 봐요.</li>
+<li>알티노 배터리가 충분한지 봐요.</li>
+<li>[가짜 알티노로 연습]을 눌러 연결을 끊고, 알티노 전원을 껐다 켠 뒤 다시 연결해요.</li>
+</ol>
+
+<h3>⑥ 이상하게 움직이거나 멈추지 않아요</h3>
+<p>바로 <b>긴급 정지</b>(또는 <b>Esc</b> 키)를 눌러요. 그래도 안 멈추면 알티노 <b>전원을 꺼요</b>.</p>
+<p>소리가 계속 나면 <code>Sound(0)</code>을 실행해요.</p>
 </section>
+
+<section id="help-words">
+<h3>낯선 말 풀이</h3>
+<table>
+<tr><th>말</th><th>쉬운 뜻</th></tr>
+<tr><td>블루투스 짝짓기</td><td>컴퓨터와 알티노가 서로 "내 친구야" 하고 등록하는 일이에요. 처음 한 번만 해요.</td></tr>
+<tr><td>COM 포트</td><td>컴퓨터와 알티노 사이의 <b>전용 길</b> 이름이에요. 예: COM4. 짝짓기하면 윈도우가 만들어 줘요.</td></tr>
+<tr><td>가짜 알티노</td><td>화면 속에서 대신 달리는 연습용 알티노예요. 진짜 알티노 없이도 코드를 시험할 수 있어요.</td></tr>
+<tr><td>긴급 정지</td><td>모든 움직임·소리·불빛을 바로 끄는 비상 단추예요. Esc 키도 같아요.</td></tr>
+<tr><td>delay(1000)</td><td>"1초 동안 지금 하던 걸 계속해"라는 뜻이에요. 1000밀리초 = 1초예요.</td></tr>
+<tr><td>센서 값</td><td>알티노 눈(적외선)이 읽은 숫자예요. 보통 앞에 물체가 가까울수록 커요 [확인 필요].</td></tr>
+<tr><td>바퀴 값</td><td>-1000 ~ 1000. 클수록 빨라요. 마이너스는 뒤로 가요.</td></tr>
+</table>
+</section>
+
 </div>
 </dialog>
 

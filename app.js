@@ -396,8 +396,40 @@ document.querySelectorAll('[data-help]').forEach((b) => {
     if (sec) sec.scrollIntoView({ block: 'start' });
   };
 });
+/* AI에게 줄 설명서 복사 */
+let guideText = '';
+async function copyGuide(btn) {
+  const msg = btn.parentElement.querySelector('[data-copymsg]');
+  const say = (t) => { if (msg) { msg.textContent = t; setTimeout(() => { msg.textContent = ''; }, 6000); } };
+  try {
+    if (!guideText) guideText = await (await fetch('AltinoLite_AI_guide.txt', { cache: 'no-cache' })).text();
+    try { await navigator.clipboard.writeText(guideText); }
+    catch (_) {
+      const ta = document.createElement('textarea');
+      ta.value = guideText; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove();
+      if (!ok) throw new Error('copy');
+    }
+    say('✓ 복사됐어요! AI 채팅창에 붙여 넣으세요 (Ctrl+V)');
+  } catch (_) {
+    say('복사가 안 됐어요. [파일로 받기]를 눌러 보세요 (도움말 ② 대화 순서)');
+  }
+}
+document.querySelectorAll('[data-copyguide]').forEach((b) => { b.onclick = () => copyGuide(b); });
 els.help.addEventListener('click', (e) => { if (e.target === els.help) els.help.close(); });
 document.addEventListener('click', (e) => { if (e.target.matches && e.target.matches('[data-close]')) els.help.close(); });
+
+/* 처음 열었을 때 한 번만 "처음이에요?" 안내를 보여 줘요 */
+try {
+  if (!localStorage.getItem('altino_help_seen')) {
+    localStorage.setItem('altino_help_seen', '1');
+    els.help.showModal();
+    const sec = document.getElementById('help-start');
+    if (sec) sec.scrollIntoView({ block: 'start' });
+  }
+} catch (_) { /* 저장이 막힌 브라우저면 그냥 넘어가요 */ }
 
 /* ---------- 시작 ---------- */
 let saved = null;
