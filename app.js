@@ -156,6 +156,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !els.help.open) {
     emergencyStop();
     if (motionPanel.classList.contains('full')) setBig(false);
+    if (document.body.classList.contains('codefull')) setCodeBig(false);
   }
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runCode(); }
 });
@@ -277,7 +278,7 @@ let lastMove = '';
 setInterval(() => {
   if (document.hidden) return;
   const t = describeTx();
-  if (t !== lastMove) { lastMove = t; els.moveText.textContent = t; }
+  if (t !== lastMove) { lastMove = t; els.moveText.textContent = t; $('cfMove').textContent = t; }
 }, 120);
 
 /* ---------- 크게 보기 (화면 가득) ---------- */
@@ -289,7 +290,17 @@ function setBig(on) {
   if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
   scheduleDraw();
 }
+function setCodeBig(on) {
+  document.body.classList.toggle('codefull', on);
+  if (on && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
+  if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  if (on) els.code.focus();
+}
+$('cfBtn').onclick = () => setCodeBig(true);
+$('cfClose').onclick = () => setCodeBig(false);
+$('cfStop').onclick = emergencyStop;
 document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && document.body.classList.contains('codefull')) setCodeBig(false);
   if (!document.fullscreenElement && motionPanel.classList.contains('full')) setBig(false);
 });
 $('fsBtn').onclick = () => setBig(true);
