@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>알티노 코딩 실험실</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+<style>
+:root{
+  --bg:#f6f1e7; --paper:#fbf8f1; --ink:#1f1b16; --sub:#6b6258; --line:#d9d0bf;
+  --accent:#b8470f; --accent-ink:#fff; --danger:#b91c1c; --ok:#2f6f4f; --code-bg:#fbf8f1;
+  --kw:#9a3412; --str:#2f6f4f; --cm:#8a8070; --num:#1d4ed8;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1b1814; --paper:#221e19; --ink:#efe8da; --sub:#a99f8f; --line:#3a342b;
+    --accent:#f08a4b; --accent-ink:#1b1814; --danger:#f87171; --ok:#6fcf97; --code-bg:#221e19;
+    --kw:#f0a070; --str:#8fd6a8; --cm:#8a8070; --num:#8ab4ff;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1b1814; --paper:#221e19; --ink:#efe8da; --sub:#a99f8f; --line:#3a342b;
+  --accent:#f08a4b; --accent-ink:#1b1814; --danger:#f87171; --ok:#6fcf97; --code-bg:#221e19;
+  --kw:#f0a070; --str:#8fd6a8; --cm:#8a8070; --num:#8ab4ff;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif;font-size:18px;line-height:1.65}
+.app{display:grid;grid-template-rows:auto 1fr;height:100vh;min-height:680px}
+header{display:flex;align-items:center;flex-wrap:wrap;gap:8px 24px;padding:14px 28px;border-bottom:1px solid var(--line)}
+h1{font-family:"Noto Serif KR",serif;font-size:22px;margin:0;letter-spacing:-.01em}
+h1 small{font-family:"Pretendard Variable",sans-serif;font-weight:400;font-size:15px;color:var(--sub);margin-left:10px}
+.spacer{flex:1}
+.link,.status{white-space:nowrap}
+@media (max-width:1280px){h1 small{display:none}}
+.status{display:flex;align-items:center;gap:8px;color:var(--sub);font-size:16px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--sub);transition:background .3s}
+.status.on .dot{background:var(--ok);box-shadow:0 0 0 4px color-mix(in srgb,var(--ok) 25%,transparent)}
+.link{background:none;border:0;color:var(--ink);font:inherit;font-size:17px;cursor:pointer;padding:4px 0;position:relative;font-weight:600}
+.link::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:100%;background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform .25s}
+.link:hover::after,.link:focus-visible::after{transform:scaleX(1)}
+.link[hidden]{display:none}
+.link.stop{color:var(--danger)}
+.link.stop::after{background:var(--danger);transform:scaleX(1)}
+main{display:grid;grid-template-columns:240px 1fr;min-height:0}
+nav{border-right:1px solid var(--line);padding:22px 20px;overflow:auto}
+nav h2{font-size:15px;color:var(--sub);font-weight:600;margin:0 0 10px;letter-spacing:.04em}
+nav ol{list-style:none;margin:0 0 26px;padding:0}
+nav li button{display:block;width:100%;text-align:left;background:none;border:0;font:inherit;color:var(--ink);padding:7px 0;cursor:pointer;transition:transform .2s,color .2s}
+nav li button:hover{transform:translateX(6px);color:var(--accent)}
+nav li button[aria-current="true"]{color:var(--accent);font-weight:700}
+nav li button[aria-current="true"]::before{content:"▸ "}
+.work{display:grid;grid-template-rows:minmax(150px,1fr) minmax(380px,56%);min-height:0}
+.editorwrap{display:grid;grid-template-rows:1fr auto;min-height:0}
+.editor{display:grid;grid-template-columns:52px 1fr;min-height:0;background:var(--code-bg);border-bottom:1px solid var(--line)}
+.gutter{font-family:"JetBrains Mono",monospace;font-size:15px;line-height:1.75;color:var(--cm);text-align:right;padding:20px 10px 20px 0;user-select:none;white-space:pre;border-right:1px solid var(--line);overflow:hidden}
+.code{font-family:"JetBrains Mono",monospace;font-size:16px;line-height:1.75;padding:20px 24px;margin:0;overflow:auto;white-space:pre;tab-size:4;outline:none;color:var(--ink)}
+.code:focus-visible{box-shadow:inset 3px 0 0 var(--accent)}
+.k{color:var(--kw)}.s{color:var(--str)}.c{color:var(--cm)}.n{color:var(--num)}
+.runbar{display:flex;align-items:center;gap:22px;padding:10px 24px;border-top:1px solid var(--line);background:var(--bg)}
+.run{background:var(--ink);color:var(--bg);border:0;font:inherit;font-weight:700;padding:9px 26px;cursor:pointer;transition:transform .15s,background .2s;white-space:nowrap}
+.run:hover:not(:disabled){background:var(--accent);color:var(--accent-ink);transform:translateY(-2px)}
+.run:active:not(:disabled){transform:translateY(1px)}
+.run:disabled{opacity:.55;cursor:default}
+.hint{color:var(--sub);font-size:16px}
+.lower{display:grid;grid-template-columns:1fr 1fr;min-height:0}
+.panel{padding:16px 24px;overflow:auto;min-height:0;display:flex;flex-direction:column}
+.panel + .panel{border-left:1px solid var(--line)}
+.panel h3{font-size:15px;margin:0 0 8px;color:var(--sub);font-weight:600;letter-spacing:.04em}
+#log{font-family:"JetBrains Mono",monospace;font-size:15px;line-height:1.7;white-space:pre-wrap;margin:0;overflow-wrap:anywhere}
+#log .t{color:var(--accent)}
+#log .dim{color:var(--cm)}
+#log .err{color:var(--danger)}
+#log .ok{color:var(--ok)}
+.canvaswrap{flex:1;min-height:170px;position:relative}
+#v3d{position:absolute;inset:0;border:1px solid var(--line);overflow:hidden}
+#v3d[hidden],canvas[hidden]{display:none}
+.views{display:flex;flex-wrap:wrap;gap:2px 18px;margin:0 0 8px}
+.views .link{font-size:16px;font-weight:500;color:var(--sub)}
+.views .link[aria-pressed="true"]{color:var(--accent);font-weight:700}
+.views .link[aria-pressed="true"]::after{transform:scaleX(1)}
+.movetext{font-size:16px;margin-top:8px;min-height:1.65em}
+.views .fs{margin-left:auto;color:var(--ink);font-weight:600}
+.fsbar{display:none}
+.panel.full{position:fixed;inset:0;z-index:100;background:var(--paper);padding:20px 32px;overflow:hidden}
+.panel.full .fsbar{display:flex;gap:28px;align-items:center;margin-bottom:12px}
+.panel.full .canvaswrap{flex:1;height:auto;min-height:0}
+.panel.full .movetext{font-size:26px}
+.panel.full .sensors{font-size:18px}
+.panel.full .views .link{font-size:20px}
+.panel.full .views .fs{display:none}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;background:var(--paper);border:1px solid var(--line)}
+.legend{font-size:15px;color:var(--sub);font-weight:400;letter-spacing:0}
+.sensors{font-size:15px;color:var(--sub);margin-top:6px;font-variant-numeric:tabular-nums}
+.sensors .link{font-size:15px}
+dialog{background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:0;padding:0;width:min(760px,calc(100vw - 32px));max-height:calc(100vh - 48px)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.dlg{padding:24px 28px 28px;overflow:auto;max-height:calc(100vh - 50px)}
+.dlg h2{font-family:"Noto Serif KR",serif;font-size:22px;margin:0 0 6px}
+.dlg h3{font-size:17px;margin:26px 0 6px}
+.dlg p,.dlg li{margin:6px 0}
+.dlg code,.dlg pre{font-family:"JetBrains Mono",monospace;font-size:16px}
+.dlg pre{background:var(--bg);border-left:3px solid var(--accent);padding:12px 16px;margin:10px 0;white-space:pre-wrap;line-height:1.7}
+.dlg table{border-collapse:collapse;width:100%;margin:10px 0;font-size:16px}
+.dlg th,.dlg td{text-align:left;padding:7px 10px 7px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.dlg th{color:var(--sub);font-weight:600;font-size:15px}
+.dlgtop{display:flex;justify-content:space-between;align-items:baseline;gap:16px}
+@media (max-width:820px){
+  .app{height:auto}
+  header{gap:8px 18px;padding:12px 16px}
+  h1 small{display:block;margin:0}
+  main{grid-template-columns:1fr}
+  nav{border-right:0;border-bottom:1px solid var(--line);padding:14px 16px}
+  nav ol{display:flex;gap:2px 16px;flex-wrap:wrap;margin-bottom:10px}
+  .work{grid-template-rows:auto auto}
+  .editor{min-height:320px}
+  .lower{grid-template-columns:1fr}
+  .panel + .panel{border-left:0;border-top:1px solid var(--line)}
+  .canvaswrap{flex:none;height:300px}
+  .panel{overflow:visible}
+  #log{max-height:240px;overflow:auto}
+  .runbar{flex-wrap:wrap;padding:10px 16px;gap:10px 18px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>알티노 코딩 실험실<small>3인 1조 · AI가 쓴 코드를 붙여 넣고 달려 보세요</small></h1>
+    <div class="spacer"></div>
+    <div class="status" id="status" role="status"><span class="dot"></span><span id="statusText">파이썬 준비 중…</span></div>
+    <button class="link" id="connectBtn">알티노 연결하기</button>
+    <button class="link" id="fakeBtn" hidden>가짜 알티노로 연습</button>
+    <button class="link stop" id="stopBtn">긴급 정지</button>
+  </header>
+  <main>
+    <nav aria-label="샘플 코드와 도움말">
+      <h2>샘플 불러오기</h2>
+      <ol id="samples"></ol>
+      <h2>도움말</h2>
+      <ol>
+        <li><button data-help="cmds">명령어 한눈에 보기</button></li>
+        <li><button data-help="prompts">AI에게 물어볼 말 모음</button></li>
+        <li><button data-help="connect">연결이 안 될 때</button></li>
+      </ol>
+    </nav>
+    <div class="work">
+      <div class="editorwrap">
+        <div class="editor">
+          <div class="gutter" id="gutter" aria-hidden="true"></div>
+          <pre class="code" id="code" contenteditable="plaintext-only" spellcheck="false" aria-label="파이썬 코드 입력"></pre>
+        </div>
+        <div class="runbar">
+          <button class="run" id="runBtn" disabled>▶ 실행</button>
+          <span class="hint" id="hint">AI에게 받은 코드를 그대로 붙여 넣어도 돼요. 소리는 Sound(0)으로 꼭 끄기!</span>
+        </div>
+      </div>
+      <div class="lower">
+        <div class="panel"><h3>결과 창</h3><pre id="log"></pre></div>
+        <div class="panel" id="motionPanel">
+          <div class="fsbar" id="fsBar">
+            <button class="run" id="fsRun">▶ 실행</button>
+            <button class="link stop" id="fsStop">긴급 정지</button>
+            <button class="link" id="fsClose">작게 보기 (Esc)</button>
+          </div>
+          <h3>알티노 움직임 <span class="legend" id="legend">· 눈금 한 칸 = 50cm (대략)</span></h3>
+          <div class="views" id="views" role="group" aria-label="보는 방향 고르기">
+            <button class="link" data-view="chase" aria-pressed="true">따라가기</button>
+            <button class="link" data-view="top" aria-pressed="false">위에서</button>
+            <button class="link" data-view="cockpit" aria-pressed="false">운전석</button>
+            <button class="link" data-view="orbit" aria-pressed="false">마음대로</button>
+            <button class="link" data-view="flat" aria-pressed="false">간단히</button>
+            <button class="link fs" id="fsBtn">⤢ 크게 보기</button>
+          </div>
+          <div class="canvaswrap"><div id="v3d"></div><canvas id="cv" hidden></canvas></div>
+          <div class="movetext" id="moveText" aria-live="off">멈춰 있어요</div>
+          <div class="sensors"><span id="sensorText">센서: 아직 없음</span> · <button class="link" id="wallBtn">가상 벽 놓기</button></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<dialog id="help" aria-label="도움말">
+  <div class="dlg" id="helpBody"><div class="dlgtop"><h2>도움말</h2><button class="link" data-close>닫기 ✕</button></div>
+
+<section id="help-cmds">
+<h3>명령어 한눈에 보기</h3>
+<p>맨 위에는 늘 <code>from AltinoLite import *</code> 와 <code>Open('COM3')</code>, 맨 끝에는 <code>Close()</code> 를 써요. (포트 이름은 웹앱에서는 무시해요)</p>
+<table>
+<tr><th>명령</th><th>하는 일</th><th>값</th></tr>
+<tr><td><code>Go(왼쪽, 오른쪽)</code></td><td>바퀴를 굴려요. 음수는 뒤로</td><td>-1000 ~ 1000</td></tr>
+<tr><td><code>Steering(값)</code></td><td>핸들 꺾기. 0은 직진</td><td>-127 ~ 127 (왼/오 방향은 직접 확인)</td></tr>
+<tr><td><code>delay(밀리초)</code></td><td>그 시간 동안 하던 일을 계속해요 (1000 = 1초)</td><td><code>time.sleep(1)</code> 도 같아요</td></tr>
+<tr><td><code>Sound(값)</code></td><td>소리 내기. <b>0이면 꺼요</b></td><td>0 ~ 255 (소리 높이 [확인 필요])</td></tr>
+<tr><td><code>Light(값)</code></td><td>불빛 켜기. 0이면 꺼요</td><td>0 ~ 255 (켜지는 곳 [확인 필요])</td></tr>
+<tr><td><code>Display('A')</code></td><td>알티노 화면에 글자 보이기. 0이면 꺼요</td><td>글자 하나</td></tr>
+<tr><td><code>Stop()</code></td><td>바퀴·핸들·소리·불빛을 한꺼번에 끄기</td><td></td></tr>
+<tr><td><code>sensor.IR[1]</code> ~ <code>[6]</code></td><td>적외선 센서. 앞 물체가 가까울수록 큰 값일 가능성이 커요 [확인 필요]</td><td>숫자</td></tr>
+</table>
+<p>센서를 읽기 전에 <code>SensorFun(0)</code> 으로 새 값을 받아와요. 예: <code>sensor = SensorFun(0)</code> 다음 <code>print(sensor.IR[2])</code>.</p>
+<pre>from AltinoLite import *
+Open('COM3')
+Go(500, 500)      # 앞으로
+delay(1500)       # 1.5초 동안
+Stop()            # 멈춤
+Close()</pre>
+<p>🔇 소리를 켰다면 꼭 <code>Sound(0)</code> 으로 꺼요. 한 번 켜면 계속 울려요.</p>
+</section>
+
+<section id="help-prompts">
+<h3>AI에게 물어볼 말 모음</h3>
+<p>아래 글을 통째로 복사해서 AI(챗GPT, 제미나이, 클로드 등)에 붙여 넣고, 맨 끝 <b>[ ]</b> 부분만 내 생각으로 바꿔요.</p>
+<h3>① 첫 번째 질문 (꼭 붙이기)</h3>
+<pre>파이썬 초보자야. 알티노 라이트 로봇을 움직이는 코드를 만들어 줘.
+규칙:
+1. 맨 위에 from AltinoLite import * 와 Open('COM3') 를 쓰고, 맨 끝에 Close()
+2. 쓸 수 있는 명령은 Go(왼쪽,오른쪽) -1000~1000, Steering(-127~127), delay(밀리초), Sound(0~255), Light(0~255), Stop() 뿐이야
+3. 센서는 sensor.IR[1]~[6] 로 읽어
+4. 다른 라이브러리는 쓰지 마
+5. 코드에 한국어 주석을 달아 줘
+6. 끝나기 전에 Stop() 으로 멈추게 해 줘
+만들고 싶은 움직임: [예: 네모 모양으로 한 바퀴 돌기]</pre>
+<h3>② 고치고 싶을 때</h3>
+<pre>방금 코드에서 [예: 더 천천히 / 더 크게 돌게] 바꿔 줘. 바뀐 줄이 어디인지도 알려 줘.</pre>
+<h3>③ 오류가 났을 때</h3>
+<pre>이 코드를 실행했더니 아래 오류가 났어. 쉬운 말로 이유를 알려 주고, 고친 코드를 줘.
+[결과 창의 빨간 글자를 복사해서 붙이기]</pre>
+<h3>④ 센서를 쓰고 싶을 때</h3>
+<pre>sensor.IR[2] 값이 [예: 500] 보다 커지면 멈추고 소리를 내는 코드를 만들어 줘. 소리는 마지막에 꼭 꺼 줘.</pre>
+</section>
+
+<section id="help-connect">
+<h3>연결이 안 될 때</h3>
+<p>코드 연습은 연결 없이도 돼요. 화면의 가짜 알티노가 대신 움직여요. 진짜 알티노를 움직일 때만 아래를 확인해요.</p>
+<ol>
+<li><b>브라우저</b>는 크롬(Chrome) 또는 엣지(Edge)여야 해요. 다른 브라우저는 연결 단추가 안 돼요.</li>
+<li><b>알티노 전원</b>을 켜요.</li>
+<li><b>윈도우 블루투스 설정</b>에서 알티노를 한 번 짝지어요 (비밀번호는 보통 1234 또는 0000 [확인 필요]).</li>
+<li>짝지으면 윈도우가 <b>COM 포트</b>를 만들어 줘요. 장치 관리자 → 포트(COM &amp; LPT)에서 확인해요.</li>
+<li>[알티노 연결하기]를 누르고 목록에서 알티노가 만든 COM 포트를 골라요. 포트가 둘이면 다른 쪽도 눌러 봐요.</li>
+<li>IDLE 같은 <b>다른 프로그램이 같은 포트를 쓰고 있으면</b> 열리지 않아요. 그 프로그램을 닫아요.</li>
+<li>한 대에는 한 사람만 연결해요. 3명이 동시에 연결할 수 없어요. 모둠 순서를 정해요.</li>
+<li>이상하게 움직이면 위쪽 <b>긴급 정지</b>(또는 Esc 키)를 눌러요.</li>
+</ol>
+<p>그래도 안 되면 [가짜 알티노로 연습]을 눌러 연결을 끊고, 알티노 전원을 껐다 켜고 다시 해 봐요.</p>
+</section>
+</div>
+</dialog>
+
+<script>
+// 3D 부품: 내 폴더(vendor/)에 있으면 그걸 쓰고, 없으면 인터넷 창고에서 가져와요
+(function () {
+  var local = false;
+  try {
+    var x = new XMLHttpRequest();
+    x.open('HEAD', 'vendor/three/three.module.min.js', false);
+    x.send();
+    local = x.status === 200;
+  } catch (e) { local = false; }
+  var map = local
+    ? { 'three': new URL('vendor/three/three.module.min.js', location.href).href, 'three/addons/': new URL('vendor/three/addons/', location.href).href }
+    : { 'three': 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js', 'three/addons/': 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/' };
+  var s = document.createElement('script');
+  s.type = 'importmap';
+  s.textContent = JSON.stringify({ imports: map });
+  document.head.appendChild(s);
+})();
+</script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
