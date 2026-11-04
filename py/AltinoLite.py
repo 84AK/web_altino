@@ -105,15 +105,17 @@ def _fake_sensors():
     near = 0
     if wall >= 0:
         d = max(0.0, wall - _y)
-        # 가까울수록 값이 커진다고 가정한 흉내 값이에요  [확인 필요: 진짜 범위]
-        near = 0 if d > 30 else int((30 - d) / 30 * 2000)
+        # 설명서(PDF): 적외선 센서는 0~800, 약 30cm 안에서 가까울수록 커져요
+        near = 0 if d > 30 else int((30 - d) / 30 * 800)
     SensorData.IR[1] = near // 2
     SensorData.IR[2] = near
     SensorData.IR[3] = near // 2
     SensorData.IR[4] = 0
     SensorData.IR[5] = 0
     SensorData.IR[6] = 0
-    SensorData.CDS = 500
+    shadow = _host.shadow()   # 그늘이 시작되는 위치(cm). 없으면 -1
+    # 설명서(PDF): 밝기 센서는 0~900, 밝을수록 커요. 그늘 안에서는 어두워져요
+    SensorData.CDS = 150 if (shadow >= 0 and _y >= shadow) else 600
     SensorData.BAT = 4000
     SensorData.CNT += 1
 

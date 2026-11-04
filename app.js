@@ -6,7 +6,7 @@ const els = {
   code: $('code'), gutter: $('gutter'), log: $('log'), cv: $('cv'),
   status: $('status'), statusText: $('statusText'),
   connectBtn: $('connectBtn'), fakeBtn: $('fakeBtn'), stopBtn: $('stopBtn'), runBtn: $('runBtn'),
-  samples: $('samples'), sensorText: $('sensorText'), wallBtn: $('wallBtn'), hint: $('hint'),
+  samples: $('samples'), sensorText: $('sensorText'), wallBtn: $('wallBtn'), shadowBtn: $('shadowBtn'), hint: $('hint'),
   help: $('help'), moveText: $('moveText'),
 };
 
@@ -26,8 +26,14 @@ const SAMPLES = [
   ['13_parking.py', '주차하기'],
   ['14_delivery.py', '배달 로봇'],
   ['15_step_by_step.py', '한 줄씩 따라 하기'],
+  ['16_sensor_check.py', '센서 값 찍어 보기'],
+  ['17_follow_open_side.py', '열린 쪽으로 핸들 꺾기'],
+  ['18_dark_light.py', '어두우면 불 켜기'],
+  ['19_battery_check.py', '배터리 확인'],
+  ['20_tilt_display.py', '기울이면 글자 (일반 알티노 전용)'],
 ];
 const WALL_CM = 100;
+const SHADOW_CM = 50;   // 이 지점부터 '그늘'(어두운 곳)
 const ZERO_TX = [2, 22, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3];   // 그림용 (두 기종 공통 22칸)
 const MODEL_KEY = 'altino_model';
 let model = 'lite';   // 'lite' = 알티노 라이트, 'altino' = 일반 알티노
@@ -43,6 +49,7 @@ let worker = null;
 let workerReady = false;
 let running = false;
 let wallOn = false;
+let shadowOn = false;
 let latestTx = ZERO_TX.slice();         // 그림·3D가 읽는 22칸
 let latestRaw = zeroTx(model);          // 진짜 알티노에게 보내는 쪽지 (기종마다 칸 수가 달라요)
 let latestOpen = 0;
@@ -177,7 +184,7 @@ function runCode() {
   wakeAudio();
   running = true; setStatus(); draw();
   sayTag('실행', link.connected ? '진짜 알티노로 달려요!' : '가짜 알티노로 연습해요');
-  worker.postMessage({ type: 'run', code: els.code.value, wall: wallOn ? WALL_CM : null, model });
+  worker.postMessage({ type: 'run', code: els.code.value, wall: wallOn ? WALL_CM : null, shadow: shadowOn ? SHADOW_CM : null, model });
 }
 
 function emergencyStop() {
@@ -408,6 +415,12 @@ els.wallBtn.onclick = () => {
   els.wallBtn.textContent = wallOn ? '가상 벽 치우기' : '가상 벽 놓기';
   if (wallOn) sayTag('안내', '앞쪽 ' + WALL_CM + 'cm 지점에 가상 벽을 놓았어요. 연습 모드의 앞 센서가 벽을 느껴요.');
   scheduleDraw();
+};
+
+els.shadowBtn.onclick = () => {
+  shadowOn = !shadowOn;
+  els.shadowBtn.textContent = shadowOn ? '가상 그늘 치우기' : '가상 그늘 만들기';
+  if (shadowOn) sayTag('안내', '앞쪽 ' + SHADOW_CM + 'cm 지점부터 어두운 그늘이에요. 거기 들어가면 밝기 센서 값이 작아져요.');
 };
 
 /* ---------- 코드 편집기 ---------- */

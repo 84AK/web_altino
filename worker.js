@@ -5,6 +5,7 @@ const PYODIDE_BASE = 'https://cdn.jsdelivr.net/pyodide/v0.27.2/full/';
 let pyodide = null;
 let shared = null;          // Int32Array: [실제연결?, IR1..IR6, CDS, BAT, CNT, 잠자기칸, ...]
 let wallCm = -1;
+let shadowCm = -1;
 let canWait = false;
 
 function post(obj) { self.postMessage(obj); }
@@ -18,6 +19,7 @@ const host = {
   },
   real: () => (shared ? shared[0] : 0),
   wall: () => wallCm,
+  shadow: () => shadowCm,
   shared: () => Array.from(shared),
   emit: (json) => post({ kind: 'py', json }),
 };
@@ -46,8 +48,9 @@ async function init(sharedBuf) {
   post({ kind: 'ready', isolated: canWait });
 }
 
-function run(code, wall, model) {
+function run(code, wall, model, shadow) {
   wallCm = (typeof wall === 'number') ? wall : -1;
+  shadowCm = (typeof shadow === 'number') ? shadow : -1;
   let result;
   try {
     const raw = pyodide.globals.get('run_user')(code, model === 'altino' ? 'altino' : 'lite');
@@ -62,7 +65,7 @@ self.onmessage = async (e) => {
   const m = e.data;
   try {
     if (m.type === 'init') await init(m.shared);
-    else if (m.type === 'run') run(m.code, m.wall, m.model);
+    else if (m.type === 'run') run(m.code, m.wall, m.model, m.shadow);
   } catch (err) {
     post({ kind: 'fatal', text: String(err) });
   }

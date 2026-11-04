@@ -20,8 +20,8 @@ import _host   # 웹앱(자바스크립트)과 이야기하는 통로
 
 # ---- 진짜 알티노로 재서 바꿔야 하는 값 (지금은 짐작값) ----
 FAKE_CM_PER_SEC_AT_1000 = 60.0   # Go(1000,1000) 일 때 1초에 가는 거리 (cm)  [확인 필요]
-FAKE_WHEELBASE_CM = 10.0         # 앞바퀴-뒷바퀴 사이 거리 (cm)             [확인 필요]
-FAKE_MAX_STEER_DEG = 25.0        # Steering(127) 일 때 앞바퀴가 꺾이는 각도   [확인 필요]
+FAKE_WHEELBASE_CM = 7.8          # 앞바퀴-뒷바퀴 사이 거리 (cm)  [확인 필요] 각도를 20도로 맞추면서 돌기 속도는 예전과 같게 보정한 값
+FAKE_MAX_STEER_DEG = 20.0        # Steering(127) 일 때 앞바퀴가 꺾이는 각도 (설명서: 최대 20도)
 
 # ---- 진짜 Altino.py 와 같은 이름의 변수 ----
 tx_d = [2, 28, 35, 1, 10, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3]
@@ -128,15 +128,17 @@ def _fake_sensors():
     near = 0
     if wall >= 0:
         d = max(0.0, wall - _y)
-        # 가까울수록 값이 커진다고 가정한 흉내 값이에요  [확인 필요: 진짜 범위]
-        near = 0 if d > 30 else int((30 - d) / 30 * 2000)
+        # 설명서(PDF): 적외선 센서는 0~800, 약 30cm 안에서 가까울수록 커져요
+        near = 0 if d > 30 else int((30 - d) / 30 * 800)
     SensorData.IR[1] = near // 2
     SensorData.IR[2] = near
     SensorData.IR[3] = near // 2
     SensorData.IR[4] = 0
     SensorData.IR[5] = 0
     SensorData.IR[6] = 0
-    SensorData.CDS = 500
+    shadow = _host.shadow()   # 그늘이 시작되는 위치(cm). 없으면 -1
+    # 설명서(PDF): 밝기 센서는 0~900, 밝을수록 커요. 그늘 안에서는 어두워져요
+    SensorData.CDS = 150 if (shadow >= 0 and _y >= shadow) else 600
     SensorData.Bat = 4000
     SensorData.CNT += 1
 

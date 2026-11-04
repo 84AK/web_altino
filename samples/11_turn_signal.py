@@ -4,7 +4,7 @@ from AltinoLite import *
 
 PORT = 'COM4'        # 내 알티노의 COM 번호로 바꾸세요
 SPEED = 300
-SIGNAL_LIGHT = 1     # 깜빡일 불 번호  <- 04번에서 찾은 번호로 바꿔 보세요!
+SIGNAL_LIGHT = 16    # 깜빡일 불 번호 (16 = 앞 오른쪽 깜빡이, 64 = 뒤 오른쪽)  <- 바꿔 보세요!
 BLINK_MS = 300       # 켜져 있는 시간, 꺼져 있는 시간
 BLINK_COUNT = 5      # 깜빡이는 횟수
 

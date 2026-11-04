@@ -1,5 +1,5 @@
 # 05. 벽이 가까워지면 멈추기 - 센서 값을 읽어서 스스로 판단하는 코드
-# 먼저 sensor_check.py 로 "앞쪽 센서 값이 벽에 가까우면 얼마가 되는지" 확인하고 LIMIT 를 고치세요.
+# 먼저 16번 "센서 값 찍어 보기"로 "앞쪽 센서 값이 벽에 가까우면 얼마가 되는지" 확인하고 LIMIT 를 고치세요.
 from AltinoLite import *
 import AltinoLite
 

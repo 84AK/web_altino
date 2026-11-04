@@ -4,8 +4,8 @@ from AltinoLite import *
 
 PORT = 'COM4'        # 내 알티노의 COM 번호로 바꾸세요
 SPEED = 300
-GO_LIGHT = 1         # 갈 때 켤 불 번호    <- 바꿔 보세요!
-STOP_LIGHT = 4       # 설 때 켤 불 번호    <- 바꿔 보세요!
+GO_LIGHT = 3         # 갈 때 켤 불 번호 (3 = 앞 불 둘 다)   <- 바꿔 보세요!
+STOP_LIGHT = 0xC000  # 설 때 켤 불 번호 (브레이크등 둘 다)   <- 바꿔 보세요!
 GO_MS = 2000         # 가는 시간
 STOP_MS = 2000       # 서 있는 시간
 
