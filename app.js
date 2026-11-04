@@ -61,13 +61,17 @@ function sayTag(tag, text) {
 
 /* ---------- 연결 표시 ---------- */
 let linkText = '';
+let phase = '';   // 연결하는 중일 때 보여 줄 글 (비어 있으면 평소 상태)
 function setStatus() {
   let text; let on = false;
-  if (!workerReady) text = '파이썬 준비 중…';
+  if (phase) text = phase;
+  else if (!workerReady) text = '파이썬 준비 중…';
   else if (link.connected) { text = '진짜 ' + MODELS[model].label + ' 연결됨' + (linkText ? ' (' + linkText + ')' : ''); on = true; }
   else { text = '가짜 ' + MODELS[model].label + ' (연습 중)'; on = true; }
   els.statusText.textContent = text;
-  els.status.classList.toggle('on', on);
+  els.status.classList.toggle('on', on && !phase);
+  els.status.classList.toggle('busy', !!phase);
+  els.connectBtn.disabled = !!phase;
   els.connectBtn.hidden = link.connected;
   els.fakeBtn.hidden = !link.connected;
   els.runBtn.disabled = !workerReady || running;
@@ -149,6 +153,7 @@ const link = new Link({
   getTx: () => (latestOpen ? latestRaw : zeroTx(model)),
   onLog: (kind, text) => (kind === 'err' ? say(text, 'err') : sayTag('연결', text)),
   onChange: (name) => { linkText = name || ''; setStatus(); },
+  onPhase: (text) => { phase = text || ''; setStatus(); },
   model,
 });
 
@@ -189,6 +194,7 @@ els.connectBtn.onclick = async () => {
   setStatus();
 };
 els.fakeBtn.onclick = async () => { await link.disconnect(); setStatus(); };
+$('clearLog').onclick = () => { els.log.textContent = ''; };
 els.stopBtn.onclick = emergencyStop;
 els.runBtn.onclick = runCode;
 document.addEventListener('keydown', (e) => {
@@ -428,8 +434,11 @@ SAMPLES.forEach(([file, name], i) => {
 });
 
 /* ---------- 도움말 ---------- */
+const welcomeDlg = $('welcome');
+welcomeDlg.addEventListener('click', (e) => { if (e.target === welcomeDlg || (e.target.matches && e.target.matches('[data-close]'))) welcomeDlg.close(); });
 document.querySelectorAll('[data-help]').forEach((b) => {
   b.onclick = () => {
+    if (welcomeDlg.open) welcomeDlg.close();
     els.help.showModal();
     const sec = document.getElementById('help-' + b.dataset.help);
     if (sec) sec.scrollIntoView({ block: 'start' });
@@ -465,9 +474,7 @@ function showFirstHelp() {
   try {
     if (!localStorage.getItem('altino_help_seen')) {
       localStorage.setItem('altino_help_seen', '1');
-      els.help.showModal();
-      const sec = document.getElementById('help-start');
-      if (sec) sec.scrollIntoView({ block: 'start' });
+      welcomeDlg.showModal();
     }
   } catch (_) { /* 저장이 막힌 브라우저면 그냥 넘어가요 */ }
 }

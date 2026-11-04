@@ -11,6 +11,21 @@
 const BAUD = 115200;
 const TICK_MS = 80;
 
+// 다른 탭(AI 채팅 등)을 보는 동안 브라우저가 setInterval을 1초에 한 번으로 늦춰서 알티노가 멈칫해요.
+// 작은 일꾼(Worker)이 박자를 대신 세어 주면 늦춰지지 않아요. 일꾼을 못 만들면 예전 방식으로 돌아가요.
+function startTicker(fn, ms) {
+  try {
+    const url = URL.createObjectURL(new Blob(['setInterval(()=>postMessage(0),' + ms + ')'], { type: 'text/javascript' }));
+    const w = new Worker(url);
+    URL.revokeObjectURL(url);
+    w.onmessage = fn;
+    return { stop: () => w.terminate() };
+  } catch (_) {
+    const id = setInterval(fn, ms);
+    return { stop: () => clearInterval(id) };
+  }
+}
+
 export const MODELS = {
   lite: { id: 'lite', label: '알티노 라이트', txLen: 22, rxLen: 22, module: 'AltinoLite' },
   altino: { id: 'altino', label: '알티노', txLen: 28, rxLen: 56, module: 'Altino' },
@@ -88,33 +103,72 @@ export function parseFrames(buf, model = 'lite') {
 }
 
 /* ---------- 진짜 연결 (블루투스가 만든 COM 포트) ---------- */
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
 class SerialTransport {
-  constructor() { this.name = ''; }
-  async open(onBytes, onLost) {
+  constructor() { this.name = ''; this.gen = 0; this.isOpen = false; }
+  async open(onBytes, onLost, phase = () => {}) {
+    this.onBytes = onBytes; this.onLost = onLost; this.phase = phase;
     this.port = await navigator.serial.requestPort();
-    await this.port.open({ baudRate: BAUD });
+    phase('알티노에 연결하는 중…');
+    await this.openPort();
+  }
+  // 포트 열기. 맥/윈도우 블루투스는 가끔 첫 시도에 실패하거나 지난 연결이 덜 닫혀 있어서,
+  // 이미 열려 있으면 먼저 닫고, 실패하면 잠깐 쉬었다 최대 3번 다시 해 봐요
+  async openPort() {
+    let lastErr = null;
+    for (let n = 0; n < 3; n++) {
+      if (n > 0 && this.phase) this.phase('포트를 다시 여는 중 (' + (n + 1) + '/3)…');
+      try {
+        await this.port.open({ baudRate: BAUD });
+        lastErr = null;
+        break;
+      } catch (err) {
+        lastErr = err;
+        if (err && err.name === 'InvalidStateError') await this.closePort();
+        await wait(600);
+      }
+    }
+    if (lastErr) throw lastErr;
     this.writer = this.port.writable.getWriter();
     this.reader = this.port.readable.getReader();
-    this.closing = false;
+    this.isOpen = true;
+    const gen = ++this.gen, reader = this.reader;
     (async () => {
       try {
         for (;;) {
-          const { value, done } = await this.reader.read();
+          const { value, done } = await reader.read();
           if (done) break;
-          if (value) onBytes(value);
+          if (value) this.onBytes(value);
         }
       } catch (_) { /* 연결이 끊김 */ }
-      if (!this.closing) onLost();
+      if (gen === this.gen && this.isOpen) this.onLost();   // 일부러 닫은 게 아닐 때만
     })();
   }
-  async write(bytes) { await this.writer.write(bytes); }
-  async close() {
-    this.closing = true;
-    try { await this.reader.cancel(); } catch (_) { /* 이미 닫힘 */ }
-    try { this.reader.releaseLock(); } catch (_) { /* */ }
-    try { this.writer.releaseLock(); } catch (_) { /* */ }
+  // 열려 있는 길을 깨끗이 닫아요 (두 번 불러도 괜찮아요)
+  async closePort() {
+    this.isOpen = false; this.gen++;
+    try { if (this.reader) await this.reader.cancel(); } catch (_) { /* 이미 닫힘 */ }
+    try { if (this.reader) this.reader.releaseLock(); } catch (_) { /* */ }
+    try { if (this.writer) this.writer.releaseLock(); } catch (_) { /* */ }
+    this.reader = null; this.writer = null;
     try { await this.port.close(); } catch (_) { /* */ }
   }
+  // 알티노가 답이 없을 때: 같은 포트를 한 번 닫았다 다시 열어요 (목록을 다시 고를 필요 없어요)
+  async reopen() {
+    await this.closePort();
+    await wait(800);
+    await this.openPort();
+  }
+  async write(bytes) {
+    if (!this.writer) throw new Error('not open');
+    // 블루투스가 멈추면 write가 끝나지 않을 때가 있어서, 2초 안에 안 끝나면 끊김으로 봐요
+    await Promise.race([
+      this.writer.write(bytes),
+      wait(2000).then(() => { throw new Error('write timeout'); }),
+    ]);
+  }
+  async close() { await this.closePort(); }
 }
 
 /* ---------- 연습용 가짜 장치: 알티노 없이 통신 규칙을 시험해 봐요 (?serial=fake) ---------- */
@@ -201,8 +255,8 @@ export class FakeDevice {
 
 /* ---------- 연결 관리 ---------- */
 export class Link {
-  constructor({ shared, getTx, onLog, onChange, model = 'lite' }) {
-    this.shared = shared; this.getTx = getTx; this.onLog = onLog; this.onChange = onChange;
+  constructor({ shared, getTx, onLog, onChange, onPhase = () => {}, model = 'lite' }) {
+    this.shared = shared; this.getTx = getTx; this.onLog = onLog; this.onChange = onChange; this.onPhase = onPhase;
     this.model = model;
     this.on = false; this.rx = []; this.transport = null; this.timer = null; this.busy = false;
     this.gotFrame = false; this.watch = null;
@@ -216,29 +270,56 @@ export class Link {
     }
     const t = kind === 'fake' ? new FakeDevice(this.model) : new SerialTransport();
     try {
-      await t.open((bytes) => this.onBytes(bytes), () => this.lost());
+      await t.open((bytes) => this.onBytes(bytes), () => this.lost(), (m) => this.onPhase(m));
     } catch (err) {
+      this.onPhase('');
       if (err && err.name === 'NotFoundError') throw new Error('연결할 장치를 고르지 않았어요. 다시 [알티노 연결하기]를 눌러 보세요.');
-      throw new Error('포트를 열지 못했어요. ① 알티노 전원이 켜져 있는지 ② 컴퓨터 블루투스에 짝지어졌는지 (맥은 목록에서 cu. 로 시작하는 이름을 고르세요) ③ IDLE 같은 다른 프로그램이 같은 포트를 쓰고 있지 않은지 확인해 보세요. (' + (err && err.name) + ')');
+      throw new Error('포트를 열지 못했어요 (자동으로 3번 시도했어요). ① 알티노 전원을 껐다가 다시 켜기 ② 컴퓨터 블루투스에 짝지어졌는지 (맥은 목록에서 cu. 로 시작하는 이름, 윈도우는 포트가 둘이면 다른 쪽도 눌러 보기) ③ IDLE 같은 다른 프로그램이나 다른 탭이 같은 포트를 쓰고 있지 않은지 ④ 그래도 안 되면 페이지 새로고침(F5). 계속 안 되면 [도움말 → 연결이 안 될 때]의 "블루투스 처음부터 다시"를 따라 해요. (' + (err && err.name) + ')');
     }
     this.transport = t; this.on = true; this.rx = []; this.gotFrame = false;
     this.shared.fill(0, 1, 10); this.shared[0] = 1;
-    this.timer = setInterval(() => this.tick(), TICK_MS);
-    // 3초 동안 알티노에게서 올바른 답이 하나도 없으면, 기종이 다른 건 아닌지 알려 줘요
-    this.watch = setTimeout(() => {
-      if (this.on && !this.gotFrame) {
-        this.onLog('err', '알티노에게서 답이 없어요. 위에서 고른 기종(' + MODELS[this.model].label + ')이 지금 연결한 로봇과 같은지, 전원이 켜져 있는지 확인해 보세요.');
-      }
-    }, 3000);
+    this.retries = 0; this.reopening = false;
+    this.timer = startTicker(() => this.tick(), TICK_MS);
+    if (kind === 'serial' && !this.onUsbGone) {
+      // 블루투스가 통째로 사라지면(알티노 전원 꺼짐 등) 바로 알아차려요
+      this.onUsbGone = (e) => { if (this.on && this.transport && e.target === this.transport.port) this.lost(); };
+      navigator.serial.addEventListener('disconnect', this.onUsbGone);
+    }
+    if (kind === 'serial') this.onPhase('알티노 응답을 확인하는 중…');   // 첫 답이 올 때까지 깜빡여요
+    this.armWatch();
     this.onLog('ok', '알티노와 연결했어요. 이제 ▶ 실행을 누르면 진짜 알티노가 움직여요!');
     this.onChange(t.name);
   }
 
+  // 3초 동안 알티노에게서 올바른 답이 하나도 없으면: 먼저 같은 포트를 다시 열어 보고(최대 2번),
+  // 그래도 안 되면 기종·전원·재시작 순서를 알려 줘요 (연결은 그대로 두어서, 답만 못 읽는 경우도 쓸 수 있어요)
+  armWatch() {
+    clearTimeout(this.watch);
+    this.watch = setTimeout(async () => {
+      if (!this.on || this.gotFrame) return;
+      const t = this.transport;
+      if (this.retries < 2 && t && typeof t.reopen === 'function') {
+        this.retries++;
+        this.reopening = true;
+        this.onPhase('답이 없어서 다시 시도하는 중 (' + this.retries + '/2)…');
+        this.onLog('ok', '알티노가 답이 없어서 연결을 다시 시도해요 (' + this.retries + '/2)…');
+        try { await t.reopen(); }
+        catch (_) { this.reopening = false; this.lost(); return; }
+        this.reopening = false; this.rx = [];
+        this.onPhase('알티노 응답을 확인하는 중…');
+        this.armWatch();
+        return;
+      }
+      this.onPhase('');
+      this.onLog('err', '알티노에게서 답이 없어요. 이렇게 해 보세요. ① 위에서 고른 기종(' + MODELS[this.model].label + ')이 지금 로봇과 같은지 ② 알티노 전원을 껐다가 켜기 ③ [가짜 알티노로 연습]을 눌러 연결 끊기 ④ 페이지 새로고침(F5) 후 다시 [알티노 연결하기]. 다른 컴퓨터가 먼저 연결해 둔 로봇은 전원을 껐다 켜야 풀려요. 그래도 안 되면 [도움말 → 연결이 안 될 때]의 "블루투스 처음부터 다시"를 따라 해요.');
+    }, 3000);
+  }
+
   async tick() {
-    if (!this.on || this.busy) return;
+    if (!this.on || this.busy || this.reopening) return;
     this.busy = true;
     try { await this.transport.write(buildPacket(this.getTx(), this.model)); }
-    catch (_) { this.lost(); }
+    catch (_) { this.busy = false; this.lost(); return; }
     this.busy = false;
   }
 
@@ -252,6 +333,7 @@ export class Link {
       found.ir.forEach((v, n) => { s[1 + n] = v; });
       s[7] = found.cds; s[8] = found.bat; s[9] = (s[9] + 1) | 0;
       this.last = found;
+      if (!this.gotFrame) this.onPhase('');
       this.gotFrame = true;
     }
   }
@@ -265,8 +347,11 @@ export class Link {
 
   lost() {
     if (!this.on) return;
+    const t = this.transport;
     this.cleanup();
-    this.onLog('err', '알티노와 연결이 끊겼어요. 알티노 전원과 블루투스를 확인하고 다시 연결해 주세요.');
+    // 끊긴 포트를 그냥 두면 다음 연결 때 "포트를 열지 못했어요"가 나와서, 깨끗이 닫아 둬요
+    if (t) Promise.resolve(t.close()).catch(() => {});
+    this.onLog('err', '알티노와 연결이 끊겼어요. 알티노 전원을 껐다 켠 뒤 다시 [알티노 연결하기]를 눌러 주세요.');
     this.onChange('');
   }
 
@@ -281,8 +366,9 @@ export class Link {
   }
 
   cleanup() {
-    this.on = false; clearInterval(this.timer); this.timer = null;
+    this.on = false; if (this.timer) this.timer.stop(); this.timer = null;
     clearTimeout(this.watch); this.watch = null;
     this.shared[0] = 0;
+    this.onPhase('');
   }
 }
