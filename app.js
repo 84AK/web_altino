@@ -1,5 +1,5 @@
 // 알티노 코딩 실험실 - 화면 담당. 파이썬 실행은 worker.js, 진짜 알티노 통신은 link.js가 해요.
-import { Link } from './link.js';
+import { Link, MODELS, zeroTx } from './link.js';
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -19,7 +19,12 @@ const SAMPLES = [
   ['06_parade_demo.py', '지그재그 퍼레이드'],
 ];
 const WALL_CM = 100;
-const ZERO_TX = [2, 22, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3];
+const ZERO_TX = [2, 22, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3];   // 그림용 (두 기종 공통 22칸)
+const MODEL_KEY = 'altino_model';
+let model = 'lite';   // 'lite' = 알티노 라이트, 'altino' = 일반 알티노
+let savedModel = null;
+try { savedModel = localStorage.getItem(MODEL_KEY); } catch (_) { /* 저장 못 해도 괜찮아요 */ }
+if (savedModel && MODELS[savedModel]) model = savedModel; else savedModel = null;
 
 /* ---------- 상태 ---------- */
 const isolated = typeof SharedArrayBuffer !== 'undefined' && self.crossOriginIsolated;
@@ -29,7 +34,8 @@ let worker = null;
 let workerReady = false;
 let running = false;
 let wallOn = false;
-let latestTx = ZERO_TX.slice();
+let latestTx = ZERO_TX.slice();         // 그림·3D가 읽는 22칸
+let latestRaw = zeroTx(model);          // 진짜 알티노에게 보내는 쪽지 (기종마다 칸 수가 달라요)
 let latestOpen = 0;
 let path = [];
 let pose = { x: 0, y: 0, h: 90 };
@@ -58,8 +64,8 @@ let linkText = '';
 function setStatus() {
   let text; let on = false;
   if (!workerReady) text = '파이썬 준비 중…';
-  else if (link.connected) { text = '진짜 알티노 연결됨' + (linkText ? ' (' + linkText + ')' : ''); on = true; }
-  else { text = '가짜 알티노 (연습 중)'; on = true; }
+  else if (link.connected) { text = '진짜 ' + MODELS[model].label + ' 연결됨' + (linkText ? ' (' + linkText + ')' : ''); on = true; }
+  else { text = '가짜 ' + MODELS[model].label + ' (연습 중)'; on = true; }
   els.statusText.textContent = text;
   els.status.classList.toggle('on', on);
   els.connectBtn.hidden = link.connected;
@@ -95,7 +101,7 @@ function onWorkerMessage(e) {
 
 function onPython(j) {
   if (j.t === 'state') {
-    latestTx = j.tx; latestOpen = j.open;
+    latestTx = j.tx; latestRaw = j.raw || j.tx; latestOpen = j.open;
     pose = { x: j.x, y: j.y, h: j.h }; lastIr = j.ir;
     const last = path[path.length - 1];
     if (!last || Math.abs(last.x - j.x) + Math.abs(last.y - j.y) > 0.05) path.push({ x: j.x, y: j.y });
@@ -107,7 +113,7 @@ function onPython(j) {
 
 function onDone(r) {
   running = false;
-  latestTx = ZERO_TX.slice(); latestOpen = 0;
+  latestTx = ZERO_TX.slice(); latestRaw = zeroTx(model); latestOpen = 0;
   link.emergencyStop();   // 코드가 끝나면 알티노도 멈춰요
   if (r.ok) sayTag('끝', '코드가 끝났어요. 알티노도 멈췄어요.');
   else {
@@ -125,13 +131,13 @@ function runCode() {
   path = [{ x: 0, y: 0 }]; pose = { x: 0, y: 0, h: 90 };
   running = true; setStatus(); draw();
   sayTag('실행', link.connected ? '진짜 알티노로 달려요!' : '가짜 알티노로 연습해요');
-  worker.postMessage({ type: 'run', code: els.code.textContent, wall: wallOn ? WALL_CM : null });
+  worker.postMessage({ type: 'run', code: els.code.textContent, wall: wallOn ? WALL_CM : null, model });
 }
 
 function emergencyStop() {
   const wasRunning = running;
   if (worker) worker.terminate();
-  running = false; latestTx = ZERO_TX.slice(); latestOpen = 0; pendingRun = false;
+  running = false; latestTx = ZERO_TX.slice(); latestRaw = zeroTx(model); latestOpen = 0; pendingRun = false;
   link.emergencyStop();
   startWorker();   // 다음 실행을 위해 새 일꾼을 미리 준비
   sayTag('정지', wasRunning ? '모든 동작을 멈췄어요.' : '알티노에게 멈춤 신호를 보냈어요.');
@@ -140,10 +146,43 @@ function emergencyStop() {
 /* ---------- 진짜 알티노 연결 ---------- */
 const link = new Link({
   shared,
-  getTx: () => (latestOpen ? latestTx : ZERO_TX),
+  getTx: () => (latestOpen ? latestRaw : zeroTx(model)),
   onLog: (kind, text) => (kind === 'err' ? say(text, 'err') : sayTag('연결', text)),
   onChange: (name) => { linkText = name || ''; setStatus(); },
+  model,
 });
+
+/* ---------- 로봇 고르기 (알티노 / 알티노 라이트) ---------- */
+// 코드 속 이름을 새 기종에 맞게 바꿔요. 이미 맞는 이름이면 아무것도 안 바뀌어요.
+function convertCode(text, to) {
+  return to === 'altino'
+    ? text.replace(/\bAltinoLite\b/g, 'Altino').replace(/\.BAT\b/g, '.Bat')
+    : text.replace(/\bAltino\b/g, 'AltinoLite').replace(/\.Bat\b/g, '.BAT');
+}
+function paintModel() {
+  document.querySelectorAll('#modelPick [data-model]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.model === model)));
+}
+async function setModel(next, { quiet = false } = {}) {
+  if (!MODELS[next]) return;
+  const changed = next !== model;
+  if (changed) {
+    if (running) emergencyStop();
+    if (link.connected) await link.disconnect();
+  }
+  model = next; link.model = next;
+  latestRaw = zeroTx(model);
+  try { localStorage.setItem(MODEL_KEY, model); } catch (_) { /* */ }
+  paintModel(); setStatus();
+  if (changed) {
+    const before = els.code.textContent;
+    const after = convertCode(before, model);
+    if (after !== before) setCode(after);
+    guideText = '';
+    if (!quiet) sayTag('로봇', MODELS[model].label + '로 바꿨어요.' + (after !== before ? ' 코드 속 이름도 맞게 바꿨어요.' : '') + ' 진짜 로봇을 쓰려면 다시 [알티노 연결하기]를 눌러요.');
+  }
+}
+document.querySelectorAll('#modelPick [data-model]').forEach((b) => { b.onclick = () => setModel(b.dataset.model); });
+paintModel();
 els.connectBtn.onclick = async () => {
   try { await link.connect(new URLSearchParams(location.search).get('serial') === 'fake' ? 'fake' : 'serial'); }
   catch (err) { say(err.message, 'err'); }
@@ -377,7 +416,7 @@ async function loadSample(file, name, btn) {
     const text = await (await fetch('samples/' + file, { cache: 'no-cache' })).text();
     [...els.samples.querySelectorAll('button')].forEach((b) => b.removeAttribute('aria-current'));
     btn.setAttribute('aria-current', 'true');
-    setCode(text.replace(/\n+$/, '') + '\n');
+    setCode(convertCode(text.replace(/\n+$/, '') + '\n', model));
     sayTag('불러옴', name);
   } catch (_) { say('샘플을 불러오지 못했어요. serve.py 또는 배포 주소로 열어 주세요.', 'err'); }
 }
@@ -402,7 +441,7 @@ async function copyGuide(btn) {
   const msg = btn.parentElement.querySelector('[data-copymsg]');
   const say = (t) => { if (msg) { msg.textContent = t; setTimeout(() => { msg.textContent = ''; }, 6000); } };
   try {
-    if (!guideText) guideText = await (await fetch('AltinoLite_AI_guide.txt', { cache: 'no-cache' })).text();
+    if (!guideText) guideText = await (await fetch(model === 'altino' ? 'Altino_AI_guide.txt' : 'AltinoLite_AI_guide.txt', { cache: 'no-cache' })).text();
     try { await navigator.clipboard.writeText(guideText); }
     catch (_) {
       const ta = document.createElement('textarea');
@@ -422,14 +461,30 @@ els.help.addEventListener('click', (e) => { if (e.target === els.help) els.help.
 document.addEventListener('click', (e) => { if (e.target.matches && e.target.matches('[data-close]')) els.help.close(); });
 
 /* 처음 열었을 때 한 번만 "처음이에요?" 안내를 보여 줘요 */
-try {
-  if (!localStorage.getItem('altino_help_seen')) {
-    localStorage.setItem('altino_help_seen', '1');
-    els.help.showModal();
-    const sec = document.getElementById('help-start');
-    if (sec) sec.scrollIntoView({ block: 'start' });
-  }
-} catch (_) { /* 저장이 막힌 브라우저면 그냥 넘어가요 */ }
+function showFirstHelp() {
+  try {
+    if (!localStorage.getItem('altino_help_seen')) {
+      localStorage.setItem('altino_help_seen', '1');
+      els.help.showModal();
+      const sec = document.getElementById('help-start');
+      if (sec) sec.scrollIntoView({ block: 'start' });
+    }
+  } catch (_) { /* 저장이 막힌 브라우저면 그냥 넘어가요 */ }
+}
+
+/* 앱을 처음 열면 "어떤 알티노로 할까요?"를 먼저 물어봐요. 고른 뒤에는 위쪽 [로봇]에서 바꿔요 */
+const modelDlg = $('modelDlg');
+if (!savedModel) {
+  modelDlg.addEventListener('cancel', (e) => e.preventDefault());   // 고르기 전에는 닫히지 않아요
+  modelDlg.querySelectorAll('[data-model]').forEach((b) => {
+    b.onclick = async () => {
+      modelDlg.close();
+      await setModel(b.dataset.model, { quiet: true });
+      showFirstHelp();
+    };
+  });
+  modelDlg.showModal();
+} else showFirstHelp();
 
 /* ---------- 시작 ---------- */
 let saved = null;
@@ -440,4 +495,4 @@ startWorker();
 setStatus();
 
 // 시험용 (선생님 점검): 콘솔에서 __altino 로 상태를 볼 수 있어요
-window.__altino = { get state() { return { running, workerReady, latestTx, path: path.length, pose, connected: link.connected }; }, link, runCode, setCode };
+window.__altino = { get state() { return { running, workerReady, model, latestTx, latestRaw, path: path.length, pose, connected: link.connected }; }, link, runCode, setCode, setModel };

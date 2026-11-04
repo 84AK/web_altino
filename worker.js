@@ -38,7 +38,7 @@ async function init(sharedBuf) {
   pyodide.registerJsModule('_host', host);
   pyodide.setStdout({ batched: (s) => post({ kind: 'out', s }) });
   pyodide.setStderr({ batched: (s) => post({ kind: 'out', s }) });
-  for (const f of ['AltinoLite.py', 'runner.py']) {
+  for (const f of ['AltinoLite.py', 'Altino.py', 'runner.py']) {
     const text = await (await fetch('py/' + f, { cache: 'no-cache' })).text();
     pyodide.FS.writeFile('/home/pyodide/' + f, text);
   }
@@ -46,11 +46,11 @@ async function init(sharedBuf) {
   post({ kind: 'ready', isolated: canWait });
 }
 
-function run(code, wall) {
+function run(code, wall, model) {
   wallCm = (typeof wall === 'number') ? wall : -1;
   let result;
   try {
-    const raw = pyodide.globals.get('run_user')(code);
+    const raw = pyodide.globals.get('run_user')(code, model === 'altino' ? 'altino' : 'lite');
     result = JSON.parse(raw);
   } catch (e) {
     result = { ok: false, type: 'InternalError', msg: String(e), line: null, hint: '' };
@@ -62,7 +62,7 @@ self.onmessage = async (e) => {
   const m = e.data;
   try {
     if (m.type === 'init') await init(m.shared);
-    else if (m.type === 'run') run(m.code, m.wall);
+    else if (m.type === 'run') run(m.code, m.wall, m.model);
   } catch (err) {
     post({ kind: 'fatal', text: String(err) });
   }
