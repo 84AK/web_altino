@@ -68,6 +68,36 @@ function sayTag(tag, text) {
   els.log.parentElement.scrollTop = els.log.parentElement.scrollHeight;
 }
 
+/* ---------- 연습 중 부저 소리 (진짜 알티노가 연결되면 로봇이 직접 울려요) ---------- */
+// 소리 번호 = 피아노 건반 번호: 40=도(C4), 42=레, 44=미, 45=파, 47=솔, 49=라(440Hz), 51=시, 52=높은 도
+let soundOn = true;
+let audioCtx = null, beepOsc = null, beepGain = null, beepNum = 0;
+function wakeAudio() {          // 브라우저는 사용자가 누른 뒤에만 소리를 허락해요
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  } catch (_) { audioCtx = null; }
+}
+function beepFreq(n) { return Math.max(80, Math.min(5000, 440 * Math.pow(2, (n - 49) / 12))); }
+function updateBeep() {
+  const want = (soundOn && !link.connected && latestOpen && !document.hidden) ? (latestTx[19] | 0) : 0;
+  if (want === beepNum || !audioCtx) { if (!audioCtx) beepNum = 0; return; }
+  beepNum = want;
+  const t = audioCtx.currentTime;
+  if (want) {
+    if (!beepOsc) {
+      beepOsc = audioCtx.createOscillator(); beepGain = audioCtx.createGain();
+      beepOsc.type = 'square'; beepGain.gain.value = 0;
+      beepOsc.connect(beepGain); beepGain.connect(audioCtx.destination); beepOsc.start();
+    }
+    beepOsc.frequency.setValueAtTime(beepFreq(want), t);
+    beepGain.gain.cancelScheduledValues(t); beepGain.gain.setTargetAtTime(0.06, t, 0.005);
+  } else if (beepGain) {
+    beepGain.gain.cancelScheduledValues(t); beepGain.gain.setTargetAtTime(0, t, 0.005);
+  }
+}
+document.addEventListener('visibilitychange', updateBeep);
+
 /* ---------- 연결 표시 ---------- */
 let linkText = '';
 let phase = '';   // 연결하는 중일 때 보여 줄 글 (비어 있으면 평소 상태)
@@ -119,6 +149,7 @@ function onPython(j) {
     const last = path[path.length - 1];
     if (!last || Math.abs(last.x - j.x) + Math.abs(last.y - j.y) > 0.05) path.push({ x: j.x, y: j.y });
     els.sensorText.textContent = '앞 센서(IR2) ' + j.ir[1] + ' · 밝기 ' + j.cds + ' · 배터리 ' + j.bat;
+    updateBeep();
     scheduleDraw();
   } else if (j.t === 'cmd') say('  ' + j.s, 'dim');
   else if (j.t === 'note') say('안내: ' + j.s, 'err');
@@ -128,6 +159,7 @@ function onDone(r) {
   running = false;
   latestTx = ZERO_TX.slice(); latestRaw = zeroTx(model); latestOpen = 0;
   link.emergencyStop();   // 코드가 끝나면 알티노도 멈춰요
+  updateBeep();
   if (r.ok) sayTag('끝', '코드가 끝났어요. 알티노도 멈췄어요.');
   else {
     const where = r.line ? r.line + '번째 줄: ' : '';
@@ -142,6 +174,7 @@ function runCode() {
   if (running) return;
   if (!workerReady) { pendingRun = true; sayTag('안내', '파이썬이 아직 준비 중이에요. 준비되면 바로 실행할게요.'); return; }
   path = [{ x: 0, y: 0 }]; pose = { x: 0, y: 0, h: 90 };
+  wakeAudio();
   running = true; setStatus(); draw();
   sayTag('실행', link.connected ? '진짜 알티노로 달려요!' : '가짜 알티노로 연습해요');
   worker.postMessage({ type: 'run', code: els.code.value, wall: wallOn ? WALL_CM : null, model });
@@ -152,6 +185,7 @@ function emergencyStop() {
   if (worker) worker.terminate();
   running = false; latestTx = ZERO_TX.slice(); latestRaw = zeroTx(model); latestOpen = 0; pendingRun = false;
   link.emergencyStop();
+  updateBeep();
   startWorker();   // 다음 실행을 위해 새 일꾼을 미리 준비
   sayTag('정지', wasRunning ? '모든 동작을 멈췄어요.' : '알티노에게 멈춤 신호를 보냈어요.');
 }
@@ -161,7 +195,7 @@ const link = new Link({
   shared,
   getTx: () => (latestOpen ? latestRaw : zeroTx(model)),
   onLog: (kind, text) => (kind === 'err' ? say(text, 'err') : sayTag('연결', text)),
-  onChange: (name) => { linkText = name || ''; setStatus(); },
+  onChange: (name) => { linkText = name || ''; setStatus(); updateBeep(); },
   onPhase: (text) => { phase = text || ''; setStatus(); },
   model,
 });
@@ -205,6 +239,13 @@ els.connectBtn.onclick = async () => {
 els.fakeBtn.onclick = async () => { await link.disconnect(); setStatus(); };
 $('clearLog').onclick = () => { els.log.textContent = ''; };
 els.stopBtn.onclick = emergencyStop;
+$('soundBtn').onclick = () => {
+  soundOn = !soundOn;
+  if (soundOn) wakeAudio();
+  $('soundBtn').textContent = soundOn ? '🔊 소리 켜짐' : '🔇 소리 꺼짐';
+  $('soundBtn').setAttribute('aria-pressed', String(soundOn));
+  updateBeep();
+};
 els.runBtn.onclick = runCode;
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !els.help.open) {
