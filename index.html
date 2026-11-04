@@ -65,6 +65,7 @@ nav h2 .fold[aria-expanded="false"] .chev{transform:rotate(-90deg)}
 nav li button{display:block;width:100%;text-align:left;background:none;border:0;font:inherit;color:var(--ink);padding:7px 0;cursor:pointer;transition:transform .2s,color .2s}
 nav li button:hover{transform:translateX(6px);color:var(--accent)}
 nav li button[aria-current="true"]{color:var(--accent);font-weight:700}
+nav li.sample-tool:first-of-type,nav li.sample-tool:not(.sample-tool+.sample-tool){margin-top:10px;padding-top:6px;border-top:1px dashed var(--line,#cdbfae)}
 nav li button[aria-current="true"]::before{content:"▸ "}
 .work{display:grid;grid-template-rows:minmax(150px,1fr) 10px var(--lowerH,minmax(380px,56%));min-height:0}
 .splitter{cursor:row-resize;background:var(--line);position:relative;touch-action:none}

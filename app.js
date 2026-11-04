@@ -17,6 +17,15 @@ const SAMPLES = [
   ['04_scan_sound_light.py', '소리·불빛 번호 탐험'],
   ['05_stop_at_wall.py', '벽 앞에서 멈추기'],
   ['06_parade_demo.py', '지그재그 퍼레이드'],
+  ['07_triangle.py', '삼각형 그리기'],
+  ['08_circle.py', '동그라미 그리기'],
+  ['09_avoid_wall.py', '벽 피하기'],
+  ['10_traffic_light.py', '신호등 놀이'],
+  ['11_turn_signal.py', '방향지시등'],
+  ['12_melody.py', '멜로디 연주'],
+  ['13_parking.py', '주차하기'],
+  ['14_delivery.py', '배달 로봇'],
+  ['15_step_by_step.py', '한 줄씩 따라 하기'],
 ];
 const WALL_CM = 100;
 const ZERO_TX = [2, 22, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3];   // 그림용 (두 기종 공통 22칸)
@@ -414,12 +423,14 @@ els.code.addEventListener('keydown', (e) => {
 });
 
 /* ---------- 샘플 ---------- */
+let lastLoaded = '';
 async function loadSample(file, name, btn) {
   try {
     const text = await (await fetch('samples/' + file, { cache: 'no-cache' })).text();
     [...els.samples.querySelectorAll('button')].forEach((b) => b.removeAttribute('aria-current'));
     btn.setAttribute('aria-current', 'true');
     setCode(convertCode(text.replace(/\n+$/, '') + '\n', model));
+    lastLoaded = els.code.value;
     sayTag('불러옴', name);
   } catch (_) { say('샘플을 불러오지 못했어요. serve.py 또는 배포 주소로 열어 주세요.', 'err'); }
 }
@@ -428,6 +439,42 @@ SAMPLES.forEach(([file, name], i) => {
   b.textContent = (i + 1) + '. ' + name;
   b.onclick = () => loadSample(file, name, b);
   li.appendChild(b); els.samples.appendChild(li);
+});
+
+/* ---------- 내 파일 열기 / 코드 파일로 저장 ---------- */
+const MAX_FILE = 200 * 1024;
+const fileInput = document.createElement('input');
+fileInput.type = 'file'; fileInput.accept = '.py,.txt,text/x-python,text/plain'; fileInput.hidden = true;
+document.body.appendChild(fileInput);
+fileInput.onchange = async () => {
+  const f = fileInput.files && fileInput.files[0];
+  fileInput.value = '';
+  if (!f) return;
+  if (!/\.(py|txt)$/i.test(f.name)) { say('파이썬 파일(.py)만 열 수 있어요.', 'err'); return; }
+  if (f.size > MAX_FILE) { say('파일이 너무 커요. 200KB보다 작은 파일을 골라 주세요.', 'err'); return; }
+  const cur = els.code.value;
+  if (cur.trim() && cur !== lastLoaded && !confirm('지금 코드 칸의 글이 이 파일로 바뀌어요.\n덮어써도 될까요?')) return;
+  try {
+    const text = (await f.text()).replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
+    [...els.samples.querySelectorAll('button')].forEach((b) => b.removeAttribute('aria-current'));
+    setCode(convertCode(text.replace(/\n+$/, '') + '\n', model));
+    lastLoaded = els.code.value;
+    sayTag('불러옴', f.name);
+  } catch (_) { say('파일을 읽지 못했어요. 다른 파일로 해 보세요.', 'err'); }
+};
+function addSampleTool(label, fn) {
+  const li = document.createElement('li'); li.className = 'sample-tool';
+  const b = document.createElement('button'); b.textContent = label; b.onclick = fn;
+  li.appendChild(b); els.samples.appendChild(li);
+}
+addSampleTool('📂 내 파일 열기', () => fileInput.click());
+addSampleTool('💾 코드를 파일로 저장', () => {
+  const blob = new Blob([els.code.value], { type: 'text/x-python;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'my_altino_code.py';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  sayTag('저장함', 'my_altino_code.py');
 });
 
 /* ---------- 샘플 목록 접기/펼치기 ---------- */
