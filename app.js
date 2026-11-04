@@ -135,7 +135,7 @@ function runCode() {
   path = [{ x: 0, y: 0 }]; pose = { x: 0, y: 0, h: 90 };
   running = true; setStatus(); draw();
   sayTag('실행', link.connected ? '진짜 알티노로 달려요!' : '가짜 알티노로 연습해요');
-  worker.postMessage({ type: 'run', code: els.code.textContent, wall: wallOn ? WALL_CM : null, model });
+  worker.postMessage({ type: 'run', code: els.code.value, wall: wallOn ? WALL_CM : null, model });
 }
 
 function emergencyStop() {
@@ -179,7 +179,7 @@ async function setModel(next, { quiet = false } = {}) {
   try { localStorage.setItem(MODEL_KEY, model); } catch (_) { /* */ }
   paintModel(); setStatus();
   if (changed) {
-    const before = els.code.textContent;
+    const before = els.code.value;
     const after = convertCode(before, model);
     if (after !== before) setCode(after);
     guideText = '';
@@ -312,7 +312,7 @@ function describeTx() {
   const parts = [];
   if (avg > 0) parts.push('▲ 앞으로 ' + Math.round(Math.abs(avg) / 10) + '%');
   else if (avg < 0) parts.push('▼ 뒤로 ' + Math.round(Math.abs(avg) / 10) + '%');
-  else if (l || r) parts.push('제자리에서 돌아요');
+  else if (l || r) parts.push('바퀴가 반대로 돌아요 (거의 안 움직여요)');
   else parts.push('멈춰 있어요');
   if (avg !== 0 || l !== r) parts.push(st > 6 ? '오른쪽으로 꺾는 중' : st < -6 ? '왼쪽으로 꺾는 중' : '핸들 가운데');
   if (tx[19]) parts.push('🔊 소리 ' + tx[19]);
@@ -369,50 +369,47 @@ function highlight(src) {
     c ? '<span class="c">' + c + '</span>' : s ? '<span class="s">' + s + '</span>'
       : k ? '<span class="k">' + k + '</span>' : '<span class="n">' + n + '</span>');
 }
-function caretOffset() {
-  const sel = getSelection();
-  if (!sel.rangeCount || !els.code.contains(sel.anchorNode)) return null;
-  const r = document.createRange();
-  r.selectNodeContents(els.code); r.setEnd(sel.anchorNode, sel.anchorOffset);
-  return r.toString().length;
+const hl = $('hl');
+function paintCode() {
+  // 끝이 줄바꿈이면 마지막 빈 줄도 높이를 차지하도록 공백 한 칸을 붙여요
+  hl.innerHTML = highlight(els.code.value) + '\n ';
+  const n = els.code.value.split('\n').length;
+  els.gutter.textContent = Array.from({ length: n }, (_, i) => i + 1).join('\n');
+  syncScroll();
 }
-function setCaret(offset) {
-  const walker = document.createTreeWalker(els.code, NodeFilter.SHOW_TEXT);
-  let n; let left = offset;
-  while ((n = walker.nextNode())) {
-    if (left <= n.length) { const r = document.createRange(); r.setStart(n, left); r.collapse(true); const s = getSelection(); s.removeAllRanges(); s.addRange(r); return; }
-    left -= n.length;
+function syncScroll() {
+  hl.scrollTop = els.code.scrollTop; hl.scrollLeft = els.code.scrollLeft;
+  els.gutter.scrollTop = els.code.scrollTop;
+}
+function setCode(text) { els.code.value = text; paintCode(); saveCode(); }
+function saveCode() { try { localStorage.setItem('altino.code', els.code.value); } catch (_) { /* 저장 못 해도 괜찮아요 */ } }
+
+// 되돌리기(Ctrl+Z)가 되도록 브라우저 입력 기능을 먼저 쓰고, 안 되면 직접 끼워 넣어요
+function insertAtCaret(str) {
+  const t = els.code;
+  let ok = false;
+  try { ok = document.execCommand('insertText', false, str); } catch (_) { ok = false; }
+  if (!ok || !t.value.includes(str)) {
+    t.setRangeText(str, t.selectionStart, t.selectionEnd, 'end');
+    t.dispatchEvent(new Event('input'));
   }
 }
-function refreshGutter() {
-  const n = els.code.textContent.split('\n').length;
-  els.gutter.textContent = Array.from({ length: n }, (_, i) => i + 1).join('\n');
-}
-function setCode(text) { els.code.innerHTML = highlight(text); refreshGutter(); saveCode(); }
-function saveCode() { try { localStorage.setItem('altino.code', els.code.textContent); } catch (_) { /* 저장 못 해도 괜찮아요 */ } }
-
-let hlTimer = null;
-els.code.addEventListener('input', () => {
-  refreshGutter();
-  clearTimeout(hlTimer);
-  hlTimer = setTimeout(() => {
-    const off = caretOffset();
-    els.code.innerHTML = highlight(els.code.textContent);
-    if (off !== null && document.activeElement === els.code) setCaret(off);
-    saveCode();
-  }, 500);
-});
-els.code.addEventListener('scroll', () => { els.gutter.scrollTop = els.code.scrollTop; });
+els.code.addEventListener('input', () => { paintCode(); saveCode(); });
+els.code.addEventListener('scroll', syncScroll);
 els.code.addEventListener('keydown', (e) => {
-  if (e.key === 'Tab') { e.preventDefault(); document.execCommand('insertText', false, '    '); }
-  else if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
+  const t = els.code;
+  if (e.key === 'Tab') {
     e.preventDefault();
-    const off = caretOffset() ?? 0;
-    const before = els.code.textContent.slice(0, off);
+    insertAtCaret('    ');
+  } else if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey && !e.isComposing) {
+    // 줄바꿈은 브라우저 기본 동작에 맡기고, 앞 줄의 들여쓰기만 이어 줘요
+    e.preventDefault();
+    const pos = t.selectionStart;
+    const before = t.value.slice(0, pos);
     const line = before.slice(before.lastIndexOf('\n') + 1);
     let indent = line.match(/^ */)[0];
     if (/:\s*(#.*)?$/.test(line)) indent += '    ';
-    document.execCommand('insertText', false, '\n' + indent);
+    insertAtCaret('\n' + indent);
   }
 });
 
@@ -431,6 +428,51 @@ SAMPLES.forEach(([file, name], i) => {
   b.textContent = (i + 1) + '. ' + name;
   b.onclick = () => loadSample(file, name, b);
   li.appendChild(b); els.samples.appendChild(li);
+});
+
+/* ---------- 샘플 목록 접기/펼치기 ---------- */
+const sampleFold = $('sampleFold');
+function setSamplesOpen(open) {
+  els.samples.hidden = !open;
+  sampleFold.setAttribute('aria-expanded', String(open));
+  try { localStorage.setItem('altino.samplesOpen', open ? '1' : '0'); } catch (_) { /* */ }
+}
+sampleFold.onclick = () => setSamplesOpen(els.samples.hidden);
+try { if (localStorage.getItem('altino.samplesOpen') === '0') setSamplesOpen(false); } catch (_) { /* */ }
+
+/* ---------- 코드창 / 결과 창 경계 끌기 ---------- */
+const splitter = $('splitter');
+const workEl = document.querySelector('.work');
+const LOWER_KEY = 'altino.lowerH';
+function setLowerH(px) {
+  const total = workEl.clientHeight - 10;
+  const h = Math.max(160, Math.min(total - 150, px));
+  workEl.style.setProperty('--lowerH', h + 'px');
+  scheduleDraw();
+  return h;
+}
+try { const v = parseFloat(localStorage.getItem(LOWER_KEY)); if (v > 0) setLowerH(v); } catch (_) { /* */ }
+let dragY = null; let dragH = 0;
+splitter.addEventListener('pointerdown', (e) => {
+  dragY = e.clientY; dragH = document.querySelector('.lower').getBoundingClientRect().height;
+  splitter.setPointerCapture(e.pointerId);
+  splitter.classList.add('drag'); document.body.classList.add('dragging');
+});
+splitter.addEventListener('pointermove', (e) => { if (dragY !== null) setLowerH(dragH + (dragY - e.clientY)); });
+const endDrag = () => {
+  if (dragY === null) return;
+  dragY = null; splitter.classList.remove('drag'); document.body.classList.remove('dragging');
+  try { localStorage.setItem(LOWER_KEY, String(parseFloat(workEl.style.getPropertyValue('--lowerH')) || '')); } catch (_) { /* */ }
+};
+splitter.addEventListener('pointerup', endDrag);
+splitter.addEventListener('pointercancel', endDrag);
+splitter.addEventListener('dblclick', () => { workEl.style.removeProperty('--lowerH'); try { localStorage.removeItem(LOWER_KEY); } catch (_) { /* */ } scheduleDraw(); });
+splitter.addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+  e.preventDefault();
+  const cur = document.querySelector('.lower').getBoundingClientRect().height;
+  endDrag(); setLowerH(cur + (e.key === 'ArrowUp' ? 40 : -40));
+  try { localStorage.setItem(LOWER_KEY, String(parseFloat(workEl.style.getPropertyValue('--lowerH')))); } catch (_) { /* */ }
 });
 
 /* ---------- 도움말 ---------- */
