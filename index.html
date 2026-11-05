@@ -28,7 +28,12 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--ink);font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif;font-size:18px;line-height:1.65}
-.app{display:grid;grid-template-rows:auto 1fr;height:100vh;min-height:680px}
+.app{display:grid;grid-template-rows:auto 1fr auto;height:100vh;min-height:680px}
+.sitefoot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px 20px;padding:8px 28px;border-top:1px solid var(--line);background:var(--paper);font-size:14px;line-height:1.5;color:var(--sub)}
+.sitefoot b{color:var(--ink);font-weight:600;letter-spacing:.04em}
+.sitefoot nav{display:flex;gap:4px 16px;flex-wrap:wrap;border:0;padding:0}
+.sitefoot a{color:var(--sub);text-decoration:none;padding:6px 0;border-bottom:1px solid transparent}
+.sitefoot a:hover,.sitefoot a:focus-visible{color:var(--accent);border-bottom-color:var(--accent)}
 header{display:flex;align-items:center;flex-wrap:wrap;gap:8px 24px;padding:14px 28px;border-bottom:1px solid var(--line)}
 h1{font-family:"Noto Serif KR",serif;font-size:22px;margin:0;letter-spacing:-.01em}
 h1 small{font-family:"Pretendard Variable",sans-serif;font-weight:400;font-size:15px;color:var(--sub);margin-left:10px}
@@ -179,6 +184,8 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 .wfoot .go{font-weight:700;color:var(--accent)}
 @media (max-width:820px){
   .app{height:auto}
+  .sitefoot{padding:10px 16px;flex-direction:column;align-items:center;text-align:center;gap:2px}
+  .sitefoot nav{justify-content:center}
   header{gap:8px 18px;padding:12px 16px}
   h1 small{display:block;margin:0}
   main{grid-template-columns:1fr}
@@ -275,6 +282,10 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
       </div>
     </div>
   </main>
+  <footer class="sitefoot">
+    <b>AKLABS</b>
+    <nav aria-label="관련 사이트"><a href="https://classlog-ai.vercel.app/" target="_blank" rel="noopener">클래스로그AI</a><a href="https://ai-service-hub.vercel.app/" target="_blank" rel="noopener">아크의 실험실</a></nav>
+  </footer>
 </div>
 
 <dialog id="modelDlg" aria-label="로봇 고르기">
