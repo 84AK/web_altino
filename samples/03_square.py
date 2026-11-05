@@ -5,7 +5,7 @@ from AltinoLite import *
 PORT = 'COM4'          # 내 알티노의 COM 번호로 바꾸세요
 SPEED = 300            # 속도 (-1000 ~ 1000)
 STRAIGHT_MS = 2000     # 한 변 달리는 시간 (밀리초)
-TURN_MS = 1500         # 모서리 도는 시간  <- 실험해서 직각이 되게 고치세요!
+TURN_MS = 2500         # 모서리 도는 시간  <- 실험해서 직각이 되게 고치세요!
 
 
 def forward(ms):

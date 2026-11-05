@@ -6,8 +6,8 @@ from AltinoLite import *
 PORT = 'COM4'        # 내 알티노의 COM 번호로 바꾸세요
 SPEED = 300
 APPROACH_MS = 2000   # 주차 칸 앞까지 가는 시간
-SWING_MS = 1000      # 핸들 꺾고 앞으로 가는 시간
-BACK_MS = 1200       # 뒤로 들어가는 시간      <- 실험해서 고치세요!
+SWING_MS = 1300      # 핸들 꺾고 앞으로 가는 시간
+BACK_MS = 1600       # 뒤로 들어가는 시간      <- 실험해서 고치세요!
 
 
 def drive(steer, speed, ms):

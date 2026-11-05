@@ -383,6 +383,38 @@ setInterval(() => {
   if (t !== lastMove) { lastMove = t; els.moveText.textContent = t; $('cfMove').textContent = t; }
 }, 120);
 
+/* ---------- 센서 실시간 보기 (접는 칸) ---------- */
+const sensorPanel = $('sensorPanel');
+const sensorRows = [];
+(function buildSensorBars() {
+  const box = $('sensorBars');
+  const names = ['눈1', '눈2 (앞 센서)', '눈3', '눈4', '눈5', '눈6', '밝기', '배터리'];
+  names.forEach((nm, i) => {
+    const a = document.createElement('span'); a.className = 'nm'; a.textContent = nm;
+    const t = document.createElement('span'); t.className = 'tr';
+    const f = document.createElement('span'); f.className = 'fl'; t.appendChild(f);
+    const v = document.createElement('span'); v.className = 'vl'; v.textContent = '0';
+    box.append(a, t, v);
+    sensorRows.push({ f, v, max: i < 6 ? 800 : i === 6 ? 900 : 0 });
+  });
+})();
+setInterval(() => {
+  if (document.hidden || !sensorPanel.open) return;
+  const real = link.connected;
+  const vals = real
+    ? [shared[1], shared[2], shared[3], shared[4], shared[5], shared[6], shared[7], shared[8]]
+    : [...lastIr, 0, 0];
+  vals.forEach((n, i) => {
+    const r = sensorRows[i];
+    r.v.textContent = (!real && i > 5) ? '-' : String(n);
+    r.f.style.width = r.max && n > 0 ? Math.max(3, Math.min(100, n / r.max * 100)) + '%' : '0';
+  });
+  $('sensorSrc').textContent = real ? '· 진짜 알티노' : '· 가짜 알티노';
+  $('sensorNote').textContent = real
+    ? '손이나 상자를 알티노 앞에 대 보세요. 막대가 길어지면 그 눈이 본 거예요. 코드를 실행하지 않아도 계속 바뀌어요.'
+    : '가짜 알티노는 코드를 실행하는 동안만 값이 바뀌어요. 진짜 알티노를 연결하면 언제든 볼 수 있어요.';
+}, 200);
+
 /* ---------- 크게 보기 (화면 가득) ---------- */
 const motionPanel = $('motionPanel');
 function setBig(on) {

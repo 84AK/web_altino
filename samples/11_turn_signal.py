@@ -27,7 +27,7 @@ try:
 
     Steering(127)                  # 오른쪽으로 돌기
     Go(SPEED, SPEED)
-    delay(1900)
+    delay(2500)
     Steering(0)
 
     Go(SPEED, SPEED)               # 다시 앞으로

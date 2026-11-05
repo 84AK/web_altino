@@ -6,7 +6,7 @@ from AltinoLite import *
 PORT = 'COM4'        # 내 알티노의 COM 번호로 바꾸세요
 SPEED = 300
 GO_MS = 2500         # 배달 장소까지 가는 시간   <- 바꿔 보세요!
-TURN_MS = 3800       # 뒤돌아서 방향 바꾸는 시간 (반 바퀴, 180도)  <- 실험해서 고치세요!
+TURN_MS = 5000       # 뒤돌아서 방향 바꾸는 시간 (반 바퀴, 180도)  <- 실험해서 고치세요!
 
 
 def forward(ms):

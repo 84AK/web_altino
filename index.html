@@ -130,6 +130,17 @@ body.codefull #log{font-size:16px}
 .panel.full .views .link{font-size:20px}
 .panel.full .views .fs{display:none}
 canvas{position:absolute;inset:0;width:100%;height:100%;display:block;background:var(--paper);border:1px solid var(--line)}
+.sensorlive{margin-top:8px;border-top:1px solid var(--line);padding-top:8px;font-size:16px}
+.sensorlive summary{cursor:pointer;font-weight:600;list-style:none}
+.sensorlive summary::before{content:"▸ ";color:var(--accent)}
+.sensorlive[open] summary::before{content:"▾ "}
+.sensorlive .sub{font-weight:400;color:var(--sub);font-size:15px;margin-left:6px}
+.sbars{display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;align-items:center;margin-top:8px}
+.sbars .nm{color:var(--sub);font-size:15px;white-space:nowrap}
+.sbars .tr{height:12px;background:var(--line);border-radius:3px;overflow:hidden}
+.sbars .fl{display:block;height:100%;width:0;background:var(--accent);transition:width .12s}
+.sbars .vl{font-variant-numeric:tabular-nums;min-width:3.2em;text-align:right;font-weight:600}
+.snote{margin:8px 0 0;color:var(--sub);font-size:15px;line-height:1.5}
 .legend{font-size:15px;color:var(--sub);font-weight:400;letter-spacing:0}
 .sensors{font-size:15px;color:var(--sub);margin-top:6px;font-variant-numeric:tabular-nums}
 .sensors .link{font-size:15px}
@@ -255,6 +266,11 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
           <div class="canvaswrap"><div id="v3d"></div><canvas id="cv" hidden></canvas></div>
           <div class="movetext" id="moveText" aria-live="off">멈춰 있어요</div>
           <div class="sensors"><span id="sensorText">센서: 아직 없음</span> · <button class="link" id="wallBtn">가상 벽 놓기</button> · <button class="link" id="shadowBtn">가상 그늘 만들기</button> · <button class="link" id="soundBtn" aria-pressed="true" title="연습 중 부저 소리를 켜고 꺼요 (실제 알티노 소리와 조금 달라요)">🔊 소리 켜짐</button></div>
+          <details class="sensorlive" id="sensorPanel">
+            <summary>센서 실시간 보기 <span class="sub" id="sensorSrc"></span></summary>
+            <div class="sbars" id="sensorBars"></div>
+            <p class="snote" id="sensorNote"></p>
+          </details>
         </div>
       </div>
     </div>

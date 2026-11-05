@@ -6,7 +6,7 @@ from AltinoLite import *
 PORT = 'COM4'          # 내 알티노의 COM 번호로 바꾸세요
 SPEED = 300            # 속도 (-1000 ~ 1000)
 STRAIGHT_MS = 2000     # 한 변 달리는 시간 (밀리초)
-TURN_MS = 2500         # 모서리 도는 시간  <- 덜 돌면 늘리고, 더 돌면 줄이세요!
+TURN_MS = 3300         # 모서리 도는 시간  <- 덜 돌면 늘리고, 더 돌면 줄이세요!
 
 
 def forward(ms):
