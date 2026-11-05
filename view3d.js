@@ -148,9 +148,17 @@ export function createView3D(container, getState) {
     }
   }
 
+  // 그리는 점 수가 너무 많으면(전체화면+고해상도 화면) 선명도를 살짝 낮춰서 가볍게 해요
+  const MAX_PIXELS = 2.2e6;
+  let slow = 0;            // 느린 화면이면 1씩 올라가며 해상도를 더 낮춰요
+  function fitRatio(w, h) {
+    const byArea = Math.sqrt(MAX_PIXELS / (w * h));
+    return Math.max(1, Math.min(window.devicePixelRatio || 1, 2, byArea) - slow * 0.25);
+  }
   function resize() {
     const w = container.clientWidth, h = container.clientHeight;
     if (!w || !h) return;
+    renderer.setPixelRatio(fitRatio(w, h));
     renderer.setSize(w, h, false);
     camera.aspect = w / h; camera.updateProjectionMatrix();
   }
@@ -159,11 +167,19 @@ export function createView3D(container, getState) {
   /* ---- 한 프레임 ---- */
   let last = performance.now();
   let tracked = false;
+  let lastDraw = 0, slowFrames = 0;
   function frame(now) {
     requestAnimationFrame(frame);
-    const dt = Math.min(0.1, (now - last) / 1000); last = now;
     const s = getState();
     if (!s || !container.clientWidth) return;
+    // 알티노가 멈춰 있으면 1초에 15번만 그려요 (돌려 보기는 손으로 움직이니까 계속 그려요)
+    const moving = wheelValue(s.tx[8], s.tx[9]) || wheelValue(s.tx[6], s.tx[7]);
+    if (!moving && mode !== 'orbit' && !snap && tracked && now - lastDraw < 66) return;
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    // 한 장 그리는 데 오래 걸리는 컴퓨터는 해상도를 단계적으로 낮춰요 (최대 3단계)
+    if (moving && dt > 0.04) { if (++slowFrames > 30 && slow < 3) { slow++; slowFrames = 0; resize(); } }
+    else slowFrames = 0;
+    lastDraw = now;
 
     // 자동차 위치 (부드럽게 따라가요)
     const tx = s.tx;
