@@ -90,6 +90,8 @@ nav li button[aria-current="true"]::before{content:"▸ "}
 .splitter.h::before{content:"";position:absolute;left:50%;top:3px;width:48px;height:4px;margin-left:-24px;background:var(--sub);opacity:.6}
 .splitter:hover,.splitter.drag,.splitter:focus-visible{background:color-mix(in srgb,var(--accent) 45%,var(--line));outline:none}
 body.codefull .splitter{display:none}
+#splitter3{display:none}
+body.codefull #splitter3{display:block;position:fixed;left:0;right:0;bottom:var(--cfLogH,30vh);height:10px;z-index:102}
 body.dragging{user-select:none}
 body.dragging.dv{cursor:col-resize}
 body.dragging.dh{cursor:row-resize}
@@ -107,14 +109,14 @@ body.dragging.dh{cursor:row-resize}
 .copymsg{color:var(--accent);font-weight:600;font-size:15px}
 nav .copymsg{display:block;margin:2px 0 6px}
 .cfbar{display:none}
-body.codefull .editorwrap{position:fixed;inset:0 0 30vh 0;z-index:100;background:var(--paper);grid-template-rows:auto 1fr auto}
+body.codefull .editorwrap{position:fixed;inset:0 0 calc(var(--cfLogH,30vh) + 10px) 0;z-index:100;background:var(--paper);grid-template-rows:auto 1fr auto}
 body.codefull .cfbar{display:flex;gap:28px;align-items:center;padding:12px 24px;border-bottom:1px solid var(--line)}
 body.codefull .cfbar .cfmove{font-size:20px;color:var(--sub)}
 body.codefull .editor{grid-template-columns:68px 1fr}
 body.codefull .code,body.codefull .hl{font-size:22px}
 body.codefull .gutter{font-size:20px}
 body.codefull #cfBtn{display:none}
-body.codefull #logPanel{position:fixed;left:0;right:0;bottom:0;height:30vh;z-index:101;background:var(--paper);border-top:1px solid var(--line)}
+body.codefull #logPanel{position:fixed;left:0;right:0;bottom:0;height:var(--cfLogH,30vh);z-index:101;background:var(--paper);border-top:1px solid var(--line)}
 body.codefull #log{font-size:16px}
 .k{color:var(--kw)}.s{color:var(--str)}.c{color:var(--cm)}.n{color:var(--num)}
 .runbar{display:flex;align-items:center;flex-wrap:wrap;gap:10px 18px;padding:10px 24px;border-top:1px solid var(--line);background:var(--bg)}
@@ -312,6 +314,7 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
         </div>
         <div class="splitter h" id="splitter2" role="separator" aria-orientation="horizontal" tabindex="0" title="위아래로 끌어서 시뮬레이션과 결과 창 높이를 바꿔요 (두 번 누르면 원래대로)" aria-label="시뮬레이션과 결과 창 경계"></div>
         <div class="panel" id="logPanel"><div class="panelhead"><h3>결과 창</h3><button class="link" id="clearLog" type="button" title="결과 창의 글을 모두 지워요">지우기</button></div><pre id="log"></pre></div>
+        <div class="splitter h" id="splitter3" role="separator" aria-orientation="horizontal" tabindex="0" title="위아래로 끌어서 코드창과 결과 창 높이를 바꿔요 (두 번 누르면 원래대로)" aria-label="코드창과 결과 창 경계"></div>
       </div>
     </div>
   </main>

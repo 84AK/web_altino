@@ -616,6 +616,12 @@ makeSplitter($('splitter2'), {
   total: () => lowerEl.clientHeight - 10, size: () => $('logPanel').getBoundingClientRect().height,
 });
 
+// 코드창만 크게 볼 때: 코드창|결과 창 높이 (맨 아래 결과 창이 몇 px인지)
+makeSplitter($('splitter3'), {
+  axis: 'y', target: document.body, cssVar: '--cfLogH', key: 'altino.cfLogH', min: 100, keyNeg: 'ArrowDown', keyPos: 'ArrowUp',
+  total: () => window.innerHeight - 10, size: () => $('logPanel').getBoundingClientRect().height,
+});
+
 /* ---------- 왼쪽 샘플 영역 접기/펼치기 ---------- */
 const navToggle = $('navToggle');
 const mainEl = document.querySelector('main');
