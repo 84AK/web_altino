@@ -554,14 +554,8 @@ function addSampleTool(label, fn) {
   li.appendChild(b); els.samples.appendChild(li);
 }
 addSampleTool('📂 내 파일 열기', () => fileInput.click());
-addSampleTool('💾 코드를 파일로 저장', () => {
-  const blob = new Blob([els.code.value], { type: 'text/x-python;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = 'my_altino_code.py';
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  sayTag('저장함', 'my_altino_code.py');
-});
+// 코드 저장·클래스로그 제출 버튼은 classlog.js 가 맡는다 (위쪽 실행 줄의 ⬇ / 📤)
+if (window.AltinoClassLog) window.AltinoClassLog.init({ getCode: () => els.code.value, say, sayTag });
 
 /* ---------- 샘플 목록 접기/펼치기 ---------- */
 const sampleFold = $('sampleFold');

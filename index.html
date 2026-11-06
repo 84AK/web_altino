@@ -206,7 +206,7 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 <body>
 <div class="app">
   <header>
-    <h1>알티노 코딩 실험실<small>3인 1조 · AI가 쓴 코드를 붙여 넣고 달려 보세요</small></h1>
+    <h1>알티노 코딩 실험실<small>AI가 쓴 코드를 붙여 넣고 달려 보세요</small></h1>
     <div class="modelpick" id="modelPick" role="group" aria-label="로봇 종류 고르기">
       <span class="mlabel">로봇</span>
       <button class="link" data-model="altino" aria-pressed="false">알티노</button>
@@ -249,6 +249,8 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
         <div class="runbar">
           <button class="run" id="runBtn" disabled>▶ 실행</button>
           <button class="link" id="cfBtn">⤢ 크게 보기</button>
+        <button class="link" id="saveBtn" title="코드를 내 컴퓨터에 .py 파일로 저장해요">⬇ 코드 저장</button>
+        <button class="run" id="submitBtn" hidden title="이 코드를 클래스로그AI로 제출해요">📤 클래스로그 제출</button>
           <span class="hint" id="hint">AI에게 받은 코드를 그대로 붙여 넣어도 돼요. 소리는 Sound(0)으로 꼭 끄기!</span>
         </div>
       </div>
@@ -522,6 +524,7 @@ Close()</pre>
   document.head.appendChild(s);
 })();
 </script>
+<script src="classlog.js"></script>
 <script type="module" src="app.js"></script>
 </body>
 </html>
