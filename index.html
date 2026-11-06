@@ -58,6 +58,16 @@ h1 small{font-family:"Pretendard Variable",sans-serif;font-weight:400;font-size:
 .link.stop{color:var(--danger)}
 .link.stop::after{background:var(--danger);transform:scaleX(1)}
 main{display:grid;grid-template-columns:240px 1fr;min-height:0}
+main.navclosed{grid-template-columns:44px 1fr}
+nav{position:relative;transition:padding .2s}
+.navtoggle{display:flex;align-items:center;gap:6px;background:none;border:1px solid var(--line);color:var(--sub);font:inherit;font-size:15px;font-weight:600;padding:5px 10px;margin:0 0 16px;cursor:pointer;white-space:nowrap;transition:color .2s,border-color .2s}
+.navtoggle:hover,.navtoggle:focus-visible{color:var(--accent);border-color:var(--accent);outline:none}
+main.navclosed nav{padding:14px 6px;overflow:hidden}
+main.navclosed nav>:not(.navtoggle){display:none}
+main.navclosed .navtoggle{padding:10px 0;margin:0;width:100%;justify-content:center;flex-direction:column;gap:10px}
+main.navclosed .navtoggle .nt-label{writing-mode:vertical-rl;letter-spacing:.1em}
+.navtoggle .nt-ico{display:inline-block;transition:transform .2s}
+main.navclosed .navtoggle .nt-ico{transform:rotate(180deg)}
 nav{border-right:1px solid var(--line);padding:22px 20px;overflow:auto}
 nav h2{font-size:15px;color:var(--sub);font-weight:600;margin:0 0 10px;letter-spacing:.04em}
 nav ol{list-style:none;margin:0 0 26px;padding:0}
@@ -72,12 +82,17 @@ nav li button:hover{transform:translateX(6px);color:var(--accent)}
 nav li button[aria-current="true"]{color:var(--accent);font-weight:700}
 nav li.sample-tool:first-of-type,nav li.sample-tool:not(.sample-tool+.sample-tool){margin-top:10px;padding-top:6px;border-top:1px dashed var(--line,#cdbfae)}
 nav li button[aria-current="true"]::before{content:"▸ "}
-.work{display:grid;grid-template-rows:minmax(150px,1fr) 10px var(--lowerH,minmax(380px,56%));min-height:0}
-.splitter{cursor:row-resize;background:var(--line);position:relative;touch-action:none}
-.splitter::before{content:"";position:absolute;left:50%;top:3px;width:48px;height:4px;margin-left:-24px;background:var(--sub);opacity:.6}
+.work{display:grid;grid-template-columns:var(--codeW,minmax(0,55%)) 10px minmax(0,1fr);min-height:0;min-width:0}
+.splitter{background:var(--line);position:relative;touch-action:none}
+.splitter.v{cursor:col-resize}
+.splitter.h{cursor:row-resize}
+.splitter.v::before{content:"";position:absolute;top:50%;left:3px;height:48px;width:4px;margin-top:-24px;background:var(--sub);opacity:.6}
+.splitter.h::before{content:"";position:absolute;left:50%;top:3px;width:48px;height:4px;margin-left:-24px;background:var(--sub);opacity:.6}
 .splitter:hover,.splitter.drag,.splitter:focus-visible{background:color-mix(in srgb,var(--accent) 45%,var(--line));outline:none}
 body.codefull .splitter{display:none}
-body.dragging{user-select:none;cursor:row-resize}
+body.dragging{user-select:none}
+body.dragging.dv{cursor:col-resize}
+body.dragging.dh{cursor:row-resize}
 .editorwrap{display:grid;grid-template-rows:1fr auto;min-height:0}
 .editor{display:grid;grid-template-columns:52px 1fr;min-height:0;background:var(--code-bg);border-bottom:1px solid var(--line)}
 .gutter{font-family:"JetBrains Mono",monospace;font-size:15px;line-height:1.75;color:var(--cm);text-align:right;padding:20px 10px 20px 0;user-select:none;white-space:pre;border-right:1px solid var(--line);overflow:hidden}
@@ -99,18 +114,17 @@ body.codefull .editor{grid-template-columns:68px 1fr}
 body.codefull .code,body.codefull .hl{font-size:22px}
 body.codefull .gutter{font-size:20px}
 body.codefull #cfBtn{display:none}
-body.codefull #logPanel{position:fixed;left:0;right:0;bottom:0;height:30vh;z-index:101;background:var(--paper);border-top:1px solid var(--line);border-left:0}
+body.codefull #logPanel{position:fixed;left:0;right:0;bottom:0;height:30vh;z-index:101;background:var(--paper);border-top:1px solid var(--line)}
 body.codefull #log{font-size:16px}
 .k{color:var(--kw)}.s{color:var(--str)}.c{color:var(--cm)}.n{color:var(--num)}
-.runbar{display:flex;align-items:center;gap:22px;padding:10px 24px;border-top:1px solid var(--line);background:var(--bg)}
+.runbar{display:flex;align-items:center;flex-wrap:wrap;gap:10px 18px;padding:10px 24px;border-top:1px solid var(--line);background:var(--bg)}
 .run{background:var(--ink);color:var(--bg);border:0;font:inherit;font-weight:700;padding:9px 26px;cursor:pointer;transition:transform .15s,background .2s;white-space:nowrap}
 .run:hover:not(:disabled){background:var(--accent);color:var(--accent-ink);transform:translateY(-2px)}
 .run:active:not(:disabled){transform:translateY(1px)}
 .run:disabled{opacity:.55;cursor:default}
-.hint{color:var(--sub);font-size:16px}
-.lower{display:grid;grid-template-columns:1fr 1fr;min-height:0}
+.hint{color:var(--sub);font-size:15px;flex:1 1 100%;line-height:1.5}
+.lower{display:grid;grid-template-rows:minmax(160px,1fr) 10px var(--logH,minmax(120px,34%));min-height:0;min-width:0}
 .panel{padding:16px 24px;overflow:auto;min-height:0;display:flex;flex-direction:column}
-.panel + .panel{border-left:1px solid var(--line)}
 .panel h3{font-size:15px;margin:0 0 8px;color:var(--sub);font-weight:600;letter-spacing:.04em}
 #log{font-family:"JetBrains Mono",monospace;font-size:15px;line-height:1.7;white-space:pre-wrap;margin:0;overflow-wrap:anywhere}
 #log .t{color:var(--accent)}
@@ -188,19 +202,34 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
   .sitefoot nav{justify-content:center}
   header{gap:8px 18px;padding:12px 16px}
   h1 small{display:block;margin:0}
-  main{grid-template-columns:1fr}
+  main,main.navclosed{grid-template-columns:1fr}
+  .navtoggle{display:none}
+  main.navclosed nav>:not(.navtoggle){display:revert}
+  main.navclosed nav{padding:14px 16px;overflow:auto}
   nav{border-right:0;border-bottom:1px solid var(--line);padding:14px 16px}
   nav ol{display:flex;gap:2px 16px;flex-wrap:wrap;margin-bottom:10px}
-  .work{grid-template-rows:auto auto}
+  .work{grid-template-columns:1fr;grid-template-rows:auto auto}
   .splitter{display:none}
   .editor{min-height:320px}
-  .lower{grid-template-columns:1fr}
-  .panel + .panel{border-left:0;border-top:1px solid var(--line)}
+  .lower{grid-template-rows:auto auto}
+  #logPanel{border-top:1px solid var(--line)}
   .canvaswrap{flex:none;height:300px}
   .panel{overflow:visible}
   #log{max-height:240px;overflow:auto}
   .runbar{flex-wrap:wrap;padding:10px 16px;gap:10px 18px}
 }
+#submitBtn{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:170px}
+#submitBtn .sico{display:none;width:1.1em;height:1.1em;flex:none}
+#submitBtn.sending{background:var(--accent);color:var(--accent-ink);opacity:1;cursor:progress}
+#submitBtn.sending .sico.spin{display:inline-block;border:3px solid color-mix(in srgb,var(--accent-ink) 30%,transparent);border-top-color:var(--accent-ink);border-radius:50%;animation:sspin .8s linear infinite}
+#submitBtn.done{background:var(--ok);color:#10261a;opacity:1;animation:spop .45s cubic-bezier(.2,1.6,.4,1)}
+#submitBtn.done .sico.check{display:inline-block;font-weight:900;line-height:1;animation:spop .45s cubic-bezier(.2,1.6,.4,1)}
+#submitBtn.fail{background:var(--danger);color:#2a0c0c;opacity:1;animation:sshake .45s}
+#submitBtn.fail .sico.cross{display:inline-block;font-weight:900;line-height:1}
+@keyframes sspin{to{transform:rotate(360deg)}}
+@keyframes spop{0%{transform:scale(.8)}100%{transform:scale(1)}}
+@keyframes sshake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+@media (prefers-reduced-motion:reduce){#submitBtn.sending .sico.spin,#submitBtn.done,#submitBtn.fail,#submitBtn.done .sico.check{animation:none}}
 </style>
 </head>
 <body>
@@ -220,6 +249,7 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
   </header>
   <main>
     <nav aria-label="샘플 코드와 도움말">
+      <button class="navtoggle" id="navToggle" type="button" aria-expanded="true" aria-controls="samples" title="샘플 목록을 접었다 펴요"><span class="nt-ico" aria-hidden="true">◀</span><span class="nt-label">접기</span></button>
       <h2><button class="fold" id="sampleFold" aria-expanded="true" aria-controls="samples">샘플 불러오기 <span class="chev" aria-hidden="true">▾</span></button></h2>
       <ol id="samples"></ol>
       <h2>AI에게 코드 받기</h2>
@@ -250,13 +280,12 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
           <button class="run" id="runBtn" disabled>▶ 실행</button>
           <button class="link" id="cfBtn">⤢ 크게 보기</button>
         <button class="link" id="saveBtn" title="코드를 내 컴퓨터에 .py 파일로 저장해요">⬇ 코드 저장</button>
-        <button class="run" id="submitBtn" hidden title="이 코드를 클래스로그AI로 제출해요">📤 클래스로그 제출</button>
+        <button class="run" id="submitBtn" hidden title="이 코드를 클래스로그AI로 제출해요"><span class="sico spin" aria-hidden="true"></span><span class="sico check" aria-hidden="true">✔</span><span class="sico cross" aria-hidden="true">✖</span><span class="slabel">📤 클래스로그 제출</span></button>
           <span class="hint" id="hint">AI에게 받은 코드를 그대로 붙여 넣어도 돼요. 소리는 Sound(0)으로 꼭 끄기!</span>
         </div>
       </div>
-      <div class="splitter" id="splitter" role="separator" aria-orientation="horizontal" tabindex="0" title="위아래로 끌어서 코드창과 결과 창 높이를 바꿔요" aria-label="코드창과 결과 창 경계"></div>
+      <div class="splitter v" id="splitter" role="separator" aria-orientation="vertical" tabindex="0" title="좌우로 끌어서 코드창과 오른쪽 창 폭을 바꿔요 (두 번 누르면 원래대로)" aria-label="코드창과 오른쪽 창 경계"></div>
       <div class="lower">
-        <div class="panel" id="logPanel"><div class="panelhead"><h3>결과 창</h3><button class="link" id="clearLog" type="button" title="결과 창의 글을 모두 지워요">지우기</button></div><pre id="log"></pre></div>
         <div class="panel" id="motionPanel">
           <div class="fsbar" id="fsBar">
             <button class="run" id="fsRun">▶ 실행</button>
@@ -281,6 +310,8 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
             <p class="snote" id="sensorNote"></p>
           </details>
         </div>
+        <div class="splitter h" id="splitter2" role="separator" aria-orientation="horizontal" tabindex="0" title="위아래로 끌어서 시뮬레이션과 결과 창 높이를 바꿔요 (두 번 누르면 원래대로)" aria-label="시뮬레이션과 결과 창 경계"></div>
+        <div class="panel" id="logPanel"><div class="panelhead"><h3>결과 창</h3><button class="link" id="clearLog" type="button" title="결과 창의 글을 모두 지워요">지우기</button></div><pre id="log"></pre></div>
       </div>
     </div>
   </main>

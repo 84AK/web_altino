@@ -567,40 +567,68 @@ function setSamplesOpen(open) {
 sampleFold.onclick = () => setSamplesOpen(els.samples.hidden);
 try { if (localStorage.getItem('altino.samplesOpen') === '0') setSamplesOpen(false); } catch (_) { /* */ }
 
-/* ---------- 코드창 / 결과 창 경계 끌기 ---------- */
-const splitter = $('splitter');
+/* ---------- 경계선 끌기: 코드창|오른쪽 (좌우), 시뮬레이션|결과 창 (위아래) ---------- */
 const workEl = document.querySelector('.work');
-const LOWER_KEY = 'altino.lowerH';
-function setLowerH(px) {
-  const total = workEl.clientHeight - 10;
-  const h = Math.max(160, Math.min(total - 150, px));
-  workEl.style.setProperty('--lowerH', h + 'px');
-  scheduleDraw();
-  return h;
+const lowerEl = document.querySelector('.lower');
+function makeSplitter(el, o) {
+  // o: {axis:'x'|'y', target, cssVar, key, get(), set(px), min, keyNeg, keyPos}
+  let start = null; let startSize = 0;
+  const apply = (px) => {
+    const total = o.total();
+    const v = Math.max(o.min, Math.min(total - o.min, px));
+    o.target.style.setProperty(o.cssVar, v + 'px');
+    scheduleDraw();
+    return v;
+  };
+  const save = () => { try { localStorage.setItem(o.key, String(parseFloat(o.target.style.getPropertyValue(o.cssVar)) || '')); } catch (_) { /* */ } };
+  try { const v = parseFloat(localStorage.getItem(o.key)); if (v > 0) apply(v); } catch (_) { /* */ }
+  el.addEventListener('pointerdown', (e) => {
+    start = o.axis === 'x' ? e.clientX : e.clientY; startSize = o.size();
+    el.setPointerCapture(e.pointerId);
+    el.classList.add('drag'); document.body.classList.add('dragging', o.axis === 'x' ? 'dv' : 'dh');
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (start === null) return;
+    const cur = o.axis === 'x' ? e.clientX : e.clientY;
+    apply(startSize + (o.axis === 'x' ? cur - start : start - cur));
+  });
+  const end = () => {
+    if (start === null) return;
+    start = null; el.classList.remove('drag'); document.body.classList.remove('dragging', 'dv', 'dh');
+    save();
+  };
+  el.addEventListener('pointerup', end);
+  el.addEventListener('pointercancel', end);
+  el.addEventListener('dblclick', () => { o.target.style.removeProperty(o.cssVar); try { localStorage.removeItem(o.key); } catch (_) { /* */ } scheduleDraw(); });
+  el.addEventListener('keydown', (e) => {
+    if (e.key !== o.keyNeg && e.key !== o.keyPos) return;
+    e.preventDefault(); end();
+    apply(o.size() + (e.key === o.keyPos ? 40 : -40));
+    save();
+  });
 }
-try { const v = parseFloat(localStorage.getItem(LOWER_KEY)); if (v > 0) setLowerH(v); } catch (_) { /* */ }
-let dragY = null; let dragH = 0;
-splitter.addEventListener('pointerdown', (e) => {
-  dragY = e.clientY; dragH = document.querySelector('.lower').getBoundingClientRect().height;
-  splitter.setPointerCapture(e.pointerId);
-  splitter.classList.add('drag'); document.body.classList.add('dragging');
+makeSplitter($('splitter'), {
+  axis: 'x', target: workEl, cssVar: '--codeW', key: 'altino.codeW', min: 280, keyNeg: 'ArrowLeft', keyPos: 'ArrowRight',
+  total: () => workEl.clientWidth - 10, size: () => document.querySelector('.editorwrap').getBoundingClientRect().width,
 });
-splitter.addEventListener('pointermove', (e) => { if (dragY !== null) setLowerH(dragH + (dragY - e.clientY)); });
-const endDrag = () => {
-  if (dragY === null) return;
-  dragY = null; splitter.classList.remove('drag'); document.body.classList.remove('dragging');
-  try { localStorage.setItem(LOWER_KEY, String(parseFloat(workEl.style.getPropertyValue('--lowerH')) || '')); } catch (_) { /* */ }
-};
-splitter.addEventListener('pointerup', endDrag);
-splitter.addEventListener('pointercancel', endDrag);
-splitter.addEventListener('dblclick', () => { workEl.style.removeProperty('--lowerH'); try { localStorage.removeItem(LOWER_KEY); } catch (_) { /* */ } scheduleDraw(); });
-splitter.addEventListener('keydown', (e) => {
-  if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
-  e.preventDefault();
-  const cur = document.querySelector('.lower').getBoundingClientRect().height;
-  endDrag(); setLowerH(cur + (e.key === 'ArrowUp' ? 40 : -40));
-  try { localStorage.setItem(LOWER_KEY, String(parseFloat(workEl.style.getPropertyValue('--lowerH')))); } catch (_) { /* */ }
+makeSplitter($('splitter2'), {
+  axis: 'y', target: lowerEl, cssVar: '--logH', key: 'altino.logH', min: 120, keyNeg: 'ArrowDown', keyPos: 'ArrowUp',
+  total: () => lowerEl.clientHeight - 10, size: () => $('logPanel').getBoundingClientRect().height,
 });
+
+/* ---------- 왼쪽 샘플 영역 접기/펼치기 ---------- */
+const navToggle = $('navToggle');
+const mainEl = document.querySelector('main');
+function setNavOpen(open) {
+  mainEl.classList.toggle('navclosed', !open);
+  navToggle.setAttribute('aria-expanded', String(open));
+  navToggle.querySelector('.nt-label').textContent = open ? '접기' : '샘플';
+  navToggle.title = open ? '샘플 목록을 접어요' : '샘플 목록을 펼쳐요';
+  try { localStorage.setItem('altino.navOpen', open ? '1' : '0'); } catch (_) { /* */ }
+  setTimeout(scheduleDraw, 260);
+}
+navToggle.onclick = () => setNavOpen(mainEl.classList.contains('navclosed'));
+try { if (localStorage.getItem('altino.navOpen') === '0') setNavOpen(false); } catch (_) { /* */ }
 
 /* ---------- 도움말 ---------- */
 const welcomeDlg = $('welcome');

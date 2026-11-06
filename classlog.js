@@ -107,7 +107,16 @@
           var fileName = name + '_코드.py';
           if (!window.confirm('"' + fileName + '" 을 클래스로그AI로 제출할까요?')) return;
 
+          var lab = submitBtn.querySelector('.slabel');
+          var setState = function (cls, text) {
+            submitBtn.classList.remove('sending', 'done', 'fail');
+            if (cls) submitBtn.classList.add(cls);
+            if (lab) lab.textContent = text;
+          };
+          clearTimeout(submitBtn._t);
           submitBtn.disabled = true;
+          setState('sending', '보내는 중…');
+          var ok = false;
           try {
             var res = await fetch('/api/submit', {
               method: 'POST',
@@ -127,11 +136,15 @@
               throw new Error(err.error || ('제출 실패 (' + res.status + ')'));
             }
             dirty = false;
+            ok = true;
             sayTag('제출함', fileName + ' → 클래스로그AI');
           } catch (e) {
             say('제출하지 못했어요: ' + (e && e.message ? e.message : '알 수 없는 오류') + '\n먼저 ⬇ 코드 저장으로 파일을 보관해 두세요.', 'err');
           } finally {
             submitBtn.disabled = false;
+            setState(ok ? 'done' : 'fail', ok ? '제출 완료!' : '다시 시도');
+            submitBtn.setAttribute('aria-live', 'polite');
+            submitBtn._t = setTimeout(function () { setState('', '📤 클래스로그 제출'); }, ok ? 2500 : 3500);
           }
         };
       }
