@@ -89,9 +89,21 @@
         };
       }
 
-      if (!viaClassLog) return; // 혼자 열었을 때: 제출 버튼은 숨긴 채로 둔다
+      if (submitBtn) submitBtn.hidden = false; // 누구에게나 보인다 (클래스로그AI 홍보)
 
-      if (submitBtn) submitBtn.hidden = false;
+      if (!viaClassLog) {
+        // 클래스로그AI로 들어오지 않았을 때: 제출 대신 안내 창(입장 버튼 포함)
+        var dlg = document.getElementById('clDlg');
+        if (dlg && submitBtn) {
+          submitBtn.onclick = function () { if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); };
+          dlg.addEventListener('click', function (e) {
+            if (e.target === dlg || (e.target.matches && e.target.matches('[data-close]'))) dlg.close();
+          });
+          var saveFirst = document.getElementById('clSaveFirst');
+          if (saveFirst) saveFirst.onclick = function () { dlg.close(); if (saveBtn) saveBtn.click(); };
+        }
+        return;
+      }
 
       // 닫기 경고 켜기
       window.addEventListener('beforeunload', onBeforeUnload);

@@ -198,6 +198,14 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
 .wfoot{display:flex;justify-content:space-between;align-items:baseline;gap:12px 24px;flex-wrap:wrap;margin-top:22px}
 .wfoot .link{font-size:17px}
 .wfoot .go{font-weight:700;color:var(--accent)}
+#clDlg{width:min(560px,calc(100vw - 32px))}
+#clDlg .clperks{margin:12px 0 0;padding:0;list-style:none}
+#clDlg .clperks li{margin:8px 0;font-size:17px;padding-left:26px;position:relative}
+#clDlg .clperks li:before{content:"✔";position:absolute;left:0;color:var(--accent);font-weight:700}
+#clDlg .clsave{margin:16px 0 0;padding:10px 14px;background:var(--bg);border-left:3px solid var(--accent);font-size:16px}
+#clDlg .clbtns{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin-top:22px}
+#clDlg .clgo{display:inline-block;background:var(--ink);color:var(--paper);text-decoration:none;font-weight:700;font-size:17px;padding:12px 20px}
+#clDlg .clgo:hover{background:var(--accent)}
 @media (max-width:820px){
   .app{height:auto}
   .sitefoot{padding:10px 16px;flex-direction:column;align-items:center;text-align:center;gap:2px}
@@ -336,6 +344,23 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
   </div>
 </dialog>
 
+<dialog id="clDlg" aria-label="클래스로그AI로 입장 안내">
+  <div class="dlg">
+    <h2>클래스로그AI로 들어와야 제출돼요 📤</h2>
+    <p>클래스로그AI에서 들어오면 이렇게 편해져요.</p>
+    <ul class="clperks">
+      <li>버튼 한 번이면 <b>선생님께 바로 도착</b>해요. 파일을 따로 보낼 필요가 없어요.</li>
+      <li>내 이름으로 <b>자동 기록</b>돼서 누가 냈는지 헷갈리지 않아요.</li>
+      <li>코드가 <b>제출 기록</b>으로 남아요.</li>
+    </ul>
+    <p class="clsave">💡 들어가면 이 화면이 새로 열려서 지금 코드가 사라질 수 있어요. 먼저 <b>⬇ 코드 저장</b>을 눌러 두세요!</p>
+    <div class="clbtns">
+      <a class="clgo" href="https://classlog-ai.vercel.app/" target="_blank" rel="noopener">클래스로그AI로 입장하기 →</a>
+      <button class="link" id="clSaveFirst">먼저 코드 저장하기</button>
+      <button class="link" data-close>닫기</button>
+    </div>
+  </div>
+</dialog>
 <dialog id="welcome" aria-label="시작하기">
   <div class="dlg">
     <h2>처음이에요? 3단계면 돼요</h2>
